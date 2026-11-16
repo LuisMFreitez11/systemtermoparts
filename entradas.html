@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9D%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="estilos_cabecera.css">
+    <title>Termo Parts FW - Entradas de Almacén</title>
+    <script src="auth.js" defer></script>
+    <script src="movil.js?v=1" defer></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --info: #0f766e;
+            --bg: #f8fafc;
+            --text: #334155;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1600px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { color: var(--primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        button, .btn { padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-info { background: var(--info); color: white; }
+        .btn-taller { background: #7c3aed; color: white; }
+        .btn-danados { background: #991b1b; color: white; }
+        .btn-light { background: #e2e8f0; color: var(--text); }
+        .resumen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 18px 0 10px; }
+        .tarjeta { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; }
+        .tarjeta span { display: block; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+        .tarjeta strong { font-size: 22px; color: var(--primary); }
+        .aviso { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 6px; padding: 10px 12px; font-size: 13px; margin: 10px 0 14px; }
+        .buscador { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .buscador input { max-width: 480px; width: 100%; }
+        #contadorEntradas { font-size: 14px; color: #64748b; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 13px; vertical-align: top; }
+        th { background: #f1f5f9; color: var(--primary); white-space: nowrap; }
+        tr:hover td { background: #f8fafc; }
+        .codigo { font-weight: 700; color: var(--info); white-space: nowrap; }
+        .material { min-width: 230px; }
+        .numero { white-space: nowrap; font-weight: 700; }
+        .observaciones { min-width: 180px; max-width: 300px; }
+        .sin-datos { color: #94a3b8; font-style: italic; }
+        .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+        .acciones .btn { padding: 5px 10px; font-size: 12px; }
+        .vacio { text-align: center; color: #64748b; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; padding: 15px; z-index: 50; }
+        .modal-content { background: white; padding: 28px; border-radius: 8px; width: 100%; max-width: 760px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); max-height: 94vh; overflow-y: auto; }
+        .modal-content h3 { margin-top: 0; color: var(--primary); }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .form-group { margin-bottom: 2px; }
+        .form-group.full { grid-column: 1 / -1; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; }
+        input, select, textarea { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        textarea { resize: vertical; min-height: 70px; }
+        .stock-info { font-size: 12px; color: var(--info); margin-top: 5px; min-height: 16px; }
+        .selector-ayuda { font-size: 12px; color: #64748b; margin-top: 5px; min-height: 16px; }
+        @media (max-width: 1000px) {
+            .resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+            .material, .observaciones { min-width: 0; max-width: none; white-space: normal; }
+        }
+        @media (max-width: 620px) {
+            .resumen { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <link rel="stylesheet" href="estilos_movil.css?v=1">
+</head>
+<body>
+
+<div class="container">
+    <header class="cabecera">
+        <div class="fila-titulo">
+            <h2>📥 Entradas de material al almacén</h2>
+            <div class="auth-zona" data-auth></div>
+        </div>
+
+        <nav class="fila-nav" aria-label="Navegación y acciones">
+            <div class="nav-grupo">
+                <a href="index.html" class="btn btn-light">← Volver al Inventario</a>
+                <a href="activos.html" class="btn btn-info">📋 Activos</a>
+                <a href="activos_taller.html" class="btn btn-taller">🛠️ Activos de taller</a>
+                <a href="danados.html" class="btn btn-danados">⚠️ Dañados</a>
+                <a href="herramientas.html" class="btn btn-warning">🔧 Herramientas</a>
+            </div>
+
+            <div class="nav-grupo nav-acciones">
+                <button class="btn btn-success" onclick="abrirModal()">+ Registrar Entrada</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="resumen">
+        <div class="tarjeta"><span>Entradas registradas</span><strong id="totalEntradas">0</strong></div>
+        <div class="tarjeta"><span>Unidades ingresadas</span><strong id="totalUnidades">0</strong></div>
+        <div class="tarjeta"><span>Materiales distintos</span><strong id="totalMateriales">0</strong></div>
+        <div class="tarjeta"><span>Última entrada</span><strong id="ultimaEntrada">—</strong></div>
+    </div>
+
+    <div class="aviso">Cada entrada suma automáticamente la cantidad al stock actual y al total incrementado del material en el inventario principal.</div>
+
+    <div class="buscador">
+        <input type="search" id="buscarEntrada" placeholder="🔍 Buscar por código, material, referencia, proveedor u observaciones..." autocomplete="off">
+        <span id="contadorEntradas"></span>
+    </div>
+
+    <table id="tablaEntradas">
+        <thead>
+            <tr>
+                <th>FECHA</th>
+                <th>CÓDIGO</th>
+                <th>MATERIAL</th>
+                <th>CANTIDAD</th>
+                <th>UNIDAD</th>
+                <th>REFERENCIA</th>
+                <th>PROVEEDOR</th>
+                <th>STOCK ANTES</th>
+                <th>STOCK DESPUÉS</th>
+                <th>STOCK ACTUAL</th>
+                <th>OBSERVACIONES</th>
+                <th>ACCIONES</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="12" class="vacio">Cargando entradas...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Nueva Entrada -->
+<div class="modal" id="modalEntrada">
+    <div class="modal-content">
+        <h3>Registrar Entrada de Material</h3>
+        <form id="formEntrada">
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label for="buscarMaterialEntrada">Buscar material por código o descripción</label>
+                    <input type="search" id="buscarMaterialEntrada" placeholder="🔍 Ej: 12033002, filtro, compresor..." autocomplete="off">
+                    <div class="selector-ayuda" id="resultadoBusquedaMaterial"></div>
+                </div>
+                <div class="form-group full">
+                    <label for="entradaProducto">Material seleccionado</label>
+                    <select id="entradaProducto" required>
+                        <option value="">Selecciona un material del almacén...</option>
+                    </select>
+                    <div class="stock-info" id="entradaStockInfo"></div>
+                </div>
+                <div class="form-group">
+                    <label for="entradaCantidad">Cantidad que ingresa</label>
+                    <input type="number" id="entradaCantidad" min="0.001" step="0.001" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="entradaFecha">Fecha de entrada</label>
+                    <input type="date" id="entradaFecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="entradaReferencia">Referencia / documento</label>
+                    <input type="text" id="entradaReferencia" maxlength="100" placeholder="Ej: Factura 000123, nota de entrega...">
+                </div>
+                <div class="form-group">
+                    <label for="entradaProveedor">Proveedor</label>
+                    <input type="text" id="entradaProveedor" maxlength="150" placeholder="Ej: Termo Parts FW, C.A.">
+                </div>
+                <div class="form-group full">
+                    <label for="entradaObservaciones">Observaciones</label>
+                    <textarea id="entradaObservaciones" maxlength="5000" placeholder="Detalle adicional de la entrada (opcional)..."></textarea>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-light" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" class="btn btn-success">Guardar entrada</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let entradasCache = [];
+    let productosCache = [];
+    let opcionesProductosCache = [];
+
+    const formatoCantidad = new Intl.NumberFormat('es-VE', { maximumFractionDigits: 3 });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarEntradas();
+        cargarProductos();
+
+        document.getElementById('buscarEntrada').addEventListener('input', aplicarFiltro);
+        document.getElementById('entradaProducto').addEventListener('change', mostrarStockSeleccionado);
+        document.getElementById('buscarMaterialEntrada').addEventListener('input', renderizarOpcionesMateriales);
+        document.getElementById('buscarMaterialEntrada').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('entradaCantidad').focus();
+            }
+        });
+
+        document.getElementById('modalEntrada').addEventListener('click', function (e) {
+            if (e.target === this) {
+                cerrarModal();
+            }
+        });
+    });
+
+    function escaparHtml(valor) {
+        return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[caracter]);
+    }
+
+    function formatearCantidad(valor) {
+        const numero = Number(valor);
+        return Number.isFinite(numero) ? escaparHtml(formatoCantidad.format(numero)) : escaparHtml(valor);
+    }
+
+    function formatearFecha(valor) {
+        const texto = String(valor ?? '').trim();
+        if (texto === '') {
+            return '—';
+        }
+
+        const [fecha] = texto.split(' ');
+        const [anio, mes, dia] = fecha.split('-');
+
+        return dia && mes && anio ? `${dia}/${mes}/${anio}` : escaparHtml(texto);
+    }
+
+    async function cargarEntradas() {
+        const tbody = document.querySelector('#tablaEntradas tbody');
+        tbody.innerHTML = '<tr><td colspan="12" class="vacio">Cargando entradas...</td></tr>';
+
+        try {
+            const res = await fetch('api_entradas.php?accion=listar', {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            const entradas = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                throw new Error(entradas?.mensaje || 'El servidor respondió con estado ' + res.status);
+            }
+
+            if (!Array.isArray(entradas)) {
+                throw new Error(entradas?.mensaje || 'Respuesta inválida del servidor.');
+            }
+
+            entradasCache = entradas;
+            actualizarResumen();
+            aplicarFiltro();
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="12" class="vacio" style="color:#dc2626;">Error al cargar las entradas: ${escaparHtml(error.message)}</td></tr>`;
+        }
+    }
+
+    async function cargarProductos() {
+        const select = document.getElementById('entradaProducto');
+
+        try {
+            const res = await fetch('api.php?accion=listar', {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            const productos = await res.json().catch(() => null);
+
+            if (!res.ok || !Array.isArray(productos)) {
+                throw new Error(productos?.mensaje || 'No se pudieron cargar los materiales.');
+            }
+
+            productosCache = productos;
+
+            opcionesProductosCache = [...productos].sort((a, b) => {
+                const codigoA = String(a.sku_codigo ?? '');
+                const codigoB = String(b.sku_codigo ?? '');
+                return codigoA.localeCompare(codigoB, 'es', { numeric: true });
+            });
+
+            renderizarOpcionesMateriales();
+        } catch (error) {
+            opcionesProductosCache = [];
+            select.innerHTML = '<option value="">Error al cargar materiales</option>';
+            document.getElementById('resultadoBusquedaMaterial').textContent = 'No se pudieron cargar los materiales.';
+        }
+    }
+
+    function renderizarOpcionesMateriales() {
+        const select = document.getElementById('entradaProducto');
+        const ayuda = document.getElementById('resultadoBusquedaMaterial');
+        const busqueda = document.getElementById('buscarMaterialEntrada').value.trim().toLowerCase();
+        const seleccionActual = select.value;
+
+        const terminos = busqueda === '' ? [] : busqueda.split(/\s+/);
+        const filtrados = opcionesProductosCache.filter(p => {
+            if (terminos.length === 0) {
+                return true;
+            }
+
+            const texto = `${p.sku_codigo ?? ''} ${p.nombre_descripcion ?? ''} ${p.lote_condicion ?? ''}`.toLowerCase();
+            return terminos.every(termino => texto.includes(termino));
+        });
+
+        const textoInicial = busqueda === ''
+            ? 'Selecciona un material del almacén...'
+            : `${filtrados.length} coincidencia${filtrados.length === 1 ? '' : 's'} — elige el material`;
+
+        select.innerHTML = `<option value="">${textoInicial}</option>` + filtrados.map(p => {
+            const lote = p.lote_condicion && p.lote_condicion !== 'STOCK' ? ` · ${p.lote_condicion}` : '';
+            return `<option value="${escaparHtml(p.producto_id)}">${escaparHtml(p.sku_codigo)} — ${escaparHtml(p.nombre_descripcion)}${escaparHtml(lote)}</option>`;
+        }).join('');
+
+        if (filtrados.length === 1) {
+            select.value = String(filtrados[0].producto_id);
+        } else if (seleccionActual !== '' && filtrados.some(p => String(p.producto_id) === seleccionActual)) {
+            select.value = seleccionActual;
+        } else {
+            select.value = '';
+        }
+
+        if (busqueda === '') {
+            ayuda.textContent = `${opcionesProductosCache.length} materiales disponibles. Escribe el código para filtrar más rápido.`;
+        } else if (filtrados.length === 0) {
+            ayuda.textContent = 'No se encontró ningún material con ese código o descripción.';
+        } else if (filtrados.length === 1) {
+            ayuda.textContent = '1 coincidencia: material seleccionado automáticamente.';
+        } else {
+            ayuda.textContent = `${filtrados.length} coincidencias. Elige el material en la lista.`;
+        }
+
+        mostrarStockSeleccionado();
+    }
+
+    function mostrarStockSeleccionado() {
+        const productoId = Number(document.getElementById('entradaProducto').value);
+        const info = document.getElementById('entradaStockInfo');
+
+        if (!productoId) {
+            info.textContent = '';
+            return;
+        }
+
+        const producto = productosCache.find(p => Number(p.producto_id) === productoId);
+        if (!producto) {
+            info.textContent = '';
+            return;
+        }
+
+        info.textContent = `Stock actual: ${formatearCantidad(producto.stock_actual)} ${producto.unidad_medida || ''}`
+            + ` · Stock mínimo: ${formatearCantidad(producto.stock_minimo)}`;
+    }
+
+    function actualizarResumen() {
+        const totalUnidades = entradasCache.reduce((suma, e) => suma + Number(e.cantidad || 0), 0);
+        const materiales = new Set(entradasCache.map(e => Number(e.producto_id)));
+        const fechas = entradasCache.map(e => String(e.fecha_entrada || '')).filter(Boolean).sort();
+
+        document.getElementById('totalEntradas').textContent = formatearCantidad(entradasCache.length);
+        document.getElementById('totalUnidades').textContent = formatearCantidad(totalUnidades);
+        document.getElementById('totalMateriales').textContent = formatearCantidad(materiales.size);
+        document.getElementById('ultimaEntrada').textContent = fechas.length ? formatearFecha(fechas[fechas.length - 1]) : '—';
+    }
+
+    function aplicarFiltro() {
+        const termino = document.getElementById('buscarEntrada').value.trim().toLowerCase();
+        const contador = document.getElementById('contadorEntradas');
+
+        if (termino === '') {
+            contador.textContent = `${entradasCache.length} entrada${entradasCache.length === 1 ? '' : 's'}`;
+            renderizarEntradas(entradasCache);
+            return;
+        }
+
+        const filtradas = entradasCache.filter(e => {
+            const texto = `${e.sku_codigo} ${e.nombre_descripcion} ${e.referencia} ${e.proveedor} ${e.observaciones} ${e.fecha_entrada}`.toLowerCase();
+            return texto.includes(termino);
+        });
+
+        contador.textContent = `${filtradas.length} de ${entradasCache.length} entradas`;
+        renderizarEntradas(filtradas);
+    }
+
+    function renderizarEntradas(entradas) {
+        const tbody = document.querySelector('#tablaEntradas tbody');
+
+        if (entradas.length === 0) {
+            const mensaje = entradasCache.length === 0
+                ? 'Todavía no hay entradas de almacén registradas.'
+                : 'No hay entradas que coincidan con la búsqueda.';
+            tbody.innerHTML = `<tr><td colspan="12" class="vacio">${mensaje}</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = entradas.map(e => `
+            <tr>
+                <td>${formatearFecha(e.fecha_entrada)}</td>
+                <td><span class="codigo">${escaparHtml(e.sku_codigo)}</span></td>
+                <td class="material">${escaparHtml(e.nombre_descripcion)}</td>
+                <td class="numero">+ ${formatearCantidad(e.cantidad)}</td>
+                <td>${escaparHtml(e.unidad_medida || '—')}</td>
+                <td>${e.referencia ? escaparHtml(e.referencia) : '<span class="sin-datos">—</span>'}</td>
+                <td>${e.proveedor ? escaparHtml(e.proveedor) : '<span class="sin-datos">—</span>'}</td>
+                <td>${formatearCantidad(e.stock_anterior)}</td>
+                <td>${formatearCantidad(e.stock_nuevo)}</td>
+                <td>${formatearCantidad(e.stock_actual)}</td>
+                <td class="observaciones">${e.observaciones ? escaparHtml(e.observaciones) : '<span class="sin-datos">—</span>'}</td>
+                <td>
+                    <div class="acciones">
+                        <button class="btn btn-danger" onclick="eliminarEntrada(${Number(e.entrada_id)})">Anular</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function abrirModal() {
+        document.getElementById('formEntrada').reset();
+        document.getElementById('buscarMaterialEntrada').value = '';
+        document.getElementById('entradaFecha').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('entradaCantidad').value = 1;
+        document.getElementById('entradaStockInfo').textContent = '';
+        renderizarOpcionesMateriales();
+        document.getElementById('modalEntrada').style.display = 'flex';
+        document.getElementById('buscarMaterialEntrada').focus();
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalEntrada').style.display = 'none';
+    }
+
+    document.getElementById('formEntrada').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const data = {
+            producto_id: Number(document.getElementById('entradaProducto').value),
+            cantidad: Number(document.getElementById('entradaCantidad').value),
+            fecha_entrada: document.getElementById('entradaFecha').value,
+            referencia: document.getElementById('entradaReferencia').value.trim(),
+            proveedor: document.getElementById('entradaProveedor').value.trim(),
+            observaciones: document.getElementById('entradaObservaciones').value.trim()
+        };
+
+        if (!data.producto_id) {
+            alert('Selecciona un material del almacén.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+
+        try {
+            const res = await fetch('api_entradas.php?accion=crear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo registrar la entrada.');
+            }
+
+            cerrarModal();
+            await cargarEntradas();
+            await cargarProductos();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+
+    async function eliminarEntrada(id) {
+        const entrada = entradasCache.find(e => Number(e.entrada_id) === Number(id));
+        const detalle = entrada ? `"${entrada.sku_codigo} — ${entrada.nombre_descripcion}" (+${formatearCantidad(entrada.cantidad)})` : 'esta entrada';
+
+        if (!confirm(`¿Anular ${detalle}?\nLa cantidad se restará del stock actual del material.`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch('api_entradas.php?accion=eliminar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entrada_id: Number(id) })
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo anular la entrada.');
+            }
+
+            await cargarEntradas();
+            await cargarProductos();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+</script>
+
+</body>
+</html>
