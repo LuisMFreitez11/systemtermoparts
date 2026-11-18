@@ -1,0 +1,10 @@
+# Este directorio solo expone backend/public.
+# Los archivos sensibles se bloquean con directivas de autorización (AuthConfig).
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(env|example|ini|log|sql|md|sh|bak)$">
+    Require all denied
+</FilesMatch>

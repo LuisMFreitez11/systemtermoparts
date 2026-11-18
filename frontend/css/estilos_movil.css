@@ -1,0 +1,240 @@
+/*
+ * Adaptación a celulares (pantallas de hasta 700 px).
+ * Se carga después de los estilos de cada página para poder ajustarlos.
+ */
+
+@media (max-width: 900px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 16px 14px;
+        border-radius: 10px;
+    }
+
+    /* ---------- Cabecera ---------- */
+    .cabecera {
+        margin-bottom: 14px;
+    }
+
+    .cabecera .fila-titulo {
+        gap: 10px;
+    }
+
+    .cabecera .fila-titulo h2 {
+        font-size: 18px;
+    }
+
+    .auth-zona {
+        width: 100%;
+        margin-left: 0;
+        gap: 8px;
+    }
+
+    .auth-zona > * {
+        box-sizing: border-box;
+        flex: 1 1 calc(50% - 8px);
+        min-width: 0;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .auth-zona .auth-usuario {
+        flex-basis: 100%;
+    }
+
+    .cabecera .fila-nav {
+        gap: 8px;
+        padding-top: 12px;
+        margin-top: 12px;
+    }
+
+    .cabecera .nav-grupo,
+    .cabecera .nav-derecha {
+        width: 100%;
+        gap: 8px;
+        margin-left: 0;
+    }
+
+    .cabecera .nav-grupo .btn {
+        box-sizing: border-box;
+        flex: 1 1 calc(50% - 8px);
+        min-width: 0;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
+        line-height: 1.25;
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+
+    .cabecera .nav-reportes {
+        padding-left: 0;
+        border-left: 0;
+    }
+
+    /* ---------- Buscadores y filtros ---------- */
+    .filtros {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .filtros .campo {
+        width: 100%;
+    }
+
+    .filtros input,
+    .filtros select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .filtros input[type="search"],
+    .campo input[type="search"] {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .filtros .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .buscador {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .buscador input {
+        width: 100%;
+        max-width: none;
+    }
+
+    /* ---------- Tarjetas de resumen ---------- */
+    .resumen {
+        grid-template-columns: 1fr;
+    }
+
+    .tarjeta strong {
+        font-size: 20px;
+    }
+
+    /* ---------- Formularios y modales ---------- */
+    .modal {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        max-height: 92vh;
+        padding: 18px 14px;
+        border-radius: 14px 14px 0 0;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .material-add {
+        grid-template-columns: 1fr;
+    }
+
+    .material-buscar input {
+        width: 100%;
+    }
+
+    /* 16 px evita el zoom automático de los campos en iOS. */
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+
+    /* ---------- Tablas como tarjetas ---------- */
+    table[data-movil-listo="1"] {
+        display: block;
+        width: 100%;
+        white-space: normal;
+        overflow: visible;
+    }
+
+    table[data-movil-listo="1"] thead {
+        display: none;
+    }
+
+    table[data-movil-listo="1"] tbody {
+        display: block;
+    }
+
+    table[data-movil-listo="1"] tbody tr {
+        display: block;
+        margin: 0 0 10px;
+        padding: 4px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #ffffff;
+    }
+
+    table[data-movil-listo="1"] tr:hover td {
+        background: transparent;
+    }
+
+    table[data-movil-listo="1"] td {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 7px 0;
+        border: 0;
+        border-bottom: 1px dashed #eef2f7;
+        text-align: right;
+        font-size: 13px;
+        white-space: normal;
+    }
+
+    table[data-movil-listo="1"] tr td:last-child {
+        border-bottom: 0;
+    }
+
+    table[data-movil-listo="1"] td::before {
+        content: attr(data-etiqueta);
+        flex: 0 0 38%;
+        max-width: 38%;
+        text-align: left;
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #64748b;
+        white-space: normal;
+    }
+
+    table[data-movil-listo="1"] td[colspan] {
+        display: block;
+        text-align: center;
+        border-bottom: 0;
+    }
+
+    table[data-movil-listo="1"] td[colspan]::before {
+        content: none;
+    }
+
+    table[data-movil-listo="1"] td .acciones {
+        justify-content: flex-end;
+    }
+
+    table[data-movil-listo="1"] td .acciones .btn {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    table[data-movil-listo="1"] td .material-linea {
+        justify-content: flex-end;
+        text-align: right;
+    }
+}

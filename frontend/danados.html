@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Termo WMS">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9D%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="css/estilos_cabecera.css">
+    <title>Termo Parts FW - Materiales Dañados</title>
+    <script src="js/config.js"></script>
+    <script src="js/offline-db.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/app-shell.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/movil.js?v=2" defer></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --success: #16a34a;
+            --danger: #b91c1c;
+            --warning: #d97706;
+            --info: #0f766e;
+            --entradas: #6d28d9;
+            --bg: #f8fafc;
+            --text: #334155;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1600px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { color: var(--primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        button, .btn { padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-info { background: var(--info); color: white; }
+        .btn-taller { background: #7c3aed; color: white; }
+        .btn-entradas { background: var(--entradas); color: white; }
+        .btn-light { background: #e2e8f0; color: var(--text); }
+        .resumen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 18px 0 10px; }
+        .tarjeta { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; }
+        .tarjeta span { display: block; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+        .tarjeta strong { font-size: 22px; color: var(--danger); }
+        .aviso { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 6px; padding: 10px 12px; font-size: 13px; margin: 10px 0 14px; }
+        .buscador { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .buscador input { max-width: 480px; width: 100%; }
+        #contadorDanados { font-size: 14px; color: #64748b; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 13px; vertical-align: top; }
+        th { background: #f1f5f9; color: var(--primary); white-space: nowrap; }
+        tr:hover td { background: #f8fafc; }
+        .codigo { font-weight: 700; color: var(--info); white-space: nowrap; }
+        .material { min-width: 230px; }
+        .numero { white-space: nowrap; font-weight: 700; color: var(--danger); }
+        .motivo { min-width: 170px; }
+        .observaciones { min-width: 180px; max-width: 300px; }
+        .sin-datos { color: #94a3b8; font-style: italic; }
+        .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+        .acciones .btn { padding: 5px 10px; font-size: 12px; }
+        .vacio { text-align: center; color: #64748b; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; padding: 15px; z-index: 50; }
+        .modal-content { background: white; padding: 28px; border-radius: 8px; width: 100%; max-width: 760px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); max-height: 94vh; overflow-y: auto; }
+        .modal-content h3 { margin-top: 0; color: var(--primary); }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .form-group { margin-bottom: 2px; }
+        .form-group.full { grid-column: 1 / -1; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; }
+        input, select, textarea { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        textarea { resize: vertical; min-height: 70px; }
+        .stock-info { font-size: 12px; color: var(--info); margin-top: 5px; min-height: 16px; }
+        .selector-ayuda { font-size: 12px; color: #64748b; margin-top: 5px; min-height: 16px; }
+        @media (max-width: 1000px) {
+            .resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+            .material, .observaciones, .motivo { min-width: 0; max-width: none; white-space: normal; }
+        }
+        @media (max-width: 620px) {
+            .resumen { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <link rel="stylesheet" href="css/estilos_movil.css?v=2">
+</head>
+<body>
+
+<div class="container">
+    <header class="cabecera">
+        <div class="fila-titulo">
+            <h2>⚠️ Materiales dañados del almacén</h2>
+            <div class="auth-zona" data-auth></div>
+        </div>
+
+        <nav class="fila-nav" aria-label="Navegación y acciones">
+            <div class="nav-grupo">
+                <a href="index.html" class="btn btn-light">← Volver al Inventario</a>
+                <a href="entradas.html" class="btn btn-entradas">📥 Entradas de almacén</a>
+                <a href="activos.html" class="btn btn-info">📋 Activos</a>
+                <a href="activos_taller.html" class="btn btn-taller">🛠️ Activos de taller</a>
+                <a href="herramientas.html" class="btn btn-warning">🔧 Herramientas</a>
+            </div>
+
+            <div class="nav-grupo nav-acciones">
+                <button class="btn btn-danger" onclick="abrirModal()">+ Registrar Dañado</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="resumen">
+        <div class="tarjeta"><span>Registros</span><strong id="totalDanados">0</strong></div>
+        <div class="tarjeta"><span>Unidades dañadas</span><strong id="totalUnidades">0</strong></div>
+        <div class="tarjeta"><span>Materiales distintos</span><strong id="totalMateriales">0</strong></div>
+        <div class="tarjeta"><span>Último registro</span><strong id="ultimoDanado">—</strong></div>
+    </div>
+
+    <div class="aviso">Al registrar un material dañado, la cantidad se descuenta del stock disponible y se acumula en el total dañado del producto. Si anulas el registro, el material vuelve al stock disponible.</div>
+
+    <div class="buscador">
+        <input type="search" id="buscarDanado" placeholder="🔍 Buscar por código, material, motivo u observaciones..." autocomplete="off">
+        <span id="contadorDanados"></span>
+    </div>
+
+    <table id="tablaDanados">
+        <thead>
+            <tr>
+                <th>FECHA</th>
+                <th>CÓDIGO</th>
+                <th>MATERIAL</th>
+                <th>CANTIDAD</th>
+                <th>UNIDAD</th>
+                <th>MOTIVO</th>
+                <th>OBSERVACIONES</th>
+                <th>STOCK ANTES</th>
+                <th>STOCK DESPUÉS</th>
+                <th>STOCK ACTUAL</th>
+                <th>DAÑADO TOTAL</th>
+                <th>ACCIONES</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="12" class="vacio">Cargando materiales dañados...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Registrar Dañado -->
+<div class="modal" id="modalDanado">
+    <div class="modal-content">
+        <h3>Registrar Material Dañado</h3>
+        <form id="formDanado">
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label for="buscarMaterialDanado">Buscar material por código o descripción</label>
+                    <input type="search" id="buscarMaterialDanado" placeholder="🔍 Ej: 12033002, filtro, compresor..." autocomplete="off">
+                    <div class="selector-ayuda" id="resultadoBusquedaMaterial"></div>
+                </div>
+                <div class="form-group full">
+                    <label for="danadoProducto">Material seleccionado</label>
+                    <select id="danadoProducto" required>
+                        <option value="">Selecciona un material del almacén...</option>
+                    </select>
+                    <div class="stock-info" id="danadoStockInfo"></div>
+                </div>
+                <div class="form-group">
+                    <label for="danadoCantidad">Cantidad dañada</label>
+                    <input type="number" id="danadoCantidad" min="0.001" step="0.001" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="danadoFecha">Fecha del daño</label>
+                    <input type="date" id="danadoFecha" required>
+                </div>
+                <div class="form-group full">
+                    <label for="danadoMotivo">Motivo o tipo de daño</label>
+                    <input type="text" id="danadoMotivo" maxlength="150" list="motivosDanado" required placeholder="Ej: Golpe / quebrado">
+                    <datalist id="motivosDanado">
+                        <option value="Golpe / quebrado"></option>
+                        <option value="Humedad / corrosión"></option>
+                        <option value="Daño eléctrico"></option>
+                        <option value="Deterioro / vencido"></option>
+                        <option value="Empaque dañado"></option>
+                        <option value="Otro"></option>
+                    </datalist>
+                </div>
+                <div class="form-group full">
+                    <label for="danadoObservaciones">Observaciones</label>
+                    <textarea id="danadoObservaciones" maxlength="5000" placeholder="Detalle adicional del daño (opcional)..."></textarea>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-light" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" class="btn btn-danger">Registrar dañado</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let danadosCache = [];
+    let productosCache = [];
+    let opcionesProductosCache = [];
+
+    const formatoCantidad = new Intl.NumberFormat('es-VE', { maximumFractionDigits: 3 });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarDanados();
+        cargarProductos();
+
+        document.getElementById('buscarDanado').addEventListener('input', aplicarFiltro);
+        document.getElementById('danadoProducto').addEventListener('change', mostrarStockSeleccionado);
+        document.getElementById('buscarMaterialDanado').addEventListener('input', renderizarOpcionesMateriales);
+        document.getElementById('buscarMaterialDanado').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('danadoCantidad').focus();
+            }
+        });
+
+        document.getElementById('modalDanado').addEventListener('click', function (e) {
+            if (e.target === this) {
+                cerrarModal();
+            }
+        });
+    });
+
+    function escaparHtml(valor) {
+        return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[caracter]);
+    }
+
+    function formatearCantidad(valor) {
+        const numero = Number(valor);
+        return Number.isFinite(numero) ? escaparHtml(formatoCantidad.format(numero)) : escaparHtml(valor);
+    }
+
+    function formatearFecha(valor) {
+        const texto = String(valor ?? '').trim();
+        if (texto === '') {
+            return '—';
+        }
+
+        const [fecha] = texto.split(' ');
+        const [anio, mes, dia] = fecha.split('-');
+
+        return dia && mes && anio ? `${dia}/${mes}/${anio}` : escaparHtml(texto);
+    }
+
+    async function cargarDanados() {
+        const tbody = document.querySelector('#tablaDanados tbody');
+        tbody.innerHTML = '<tr><td colspan="12" class="vacio">Cargando materiales dañados...</td></tr>';
+
+        try {
+            const res = await apiFetch('api_danados.php?accion=listar', {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            const danados = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                throw new Error(danados?.mensaje || 'El servidor respondió con estado ' + res.status);
+            }
+
+            if (!Array.isArray(danados)) {
+                throw new Error(danados?.mensaje || 'Respuesta inválida del servidor.');
+            }
+
+            danadosCache = danados;
+            actualizarResumen();
+            aplicarFiltro();
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="12" class="vacio" style="color:#dc2626;">Error al cargar los materiales dañados: ${escaparHtml(error.message)}</td></tr>`;
+        }
+    }
+
+    async function cargarProductos() {
+        const select = document.getElementById('danadoProducto');
+
+        try {
+            const res = await apiFetch('api.php?accion=listar', {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            const productos = await res.json().catch(() => null);
+
+            if (!res.ok || !Array.isArray(productos)) {
+                throw new Error(productos?.mensaje || 'No se pudieron cargar los materiales.');
+            }
+
+            productosCache = productos;
+
+            opcionesProductosCache = [...productos].sort((a, b) => {
+                const codigoA = String(a.sku_codigo ?? '');
+                const codigoB = String(b.sku_codigo ?? '');
+                return codigoA.localeCompare(codigoB, 'es', { numeric: true });
+            });
+
+            renderizarOpcionesMateriales();
+        } catch (error) {
+            opcionesProductosCache = [];
+            select.innerHTML = '<option value="">Error al cargar materiales</option>';
+            document.getElementById('resultadoBusquedaMaterial').textContent = 'No se pudieron cargar los materiales.';
+        }
+    }
+
+    function renderizarOpcionesMateriales() {
+        const select = document.getElementById('danadoProducto');
+        const ayuda = document.getElementById('resultadoBusquedaMaterial');
+        const busqueda = document.getElementById('buscarMaterialDanado').value.trim().toLowerCase();
+        const seleccionActual = select.value;
+
+        const terminos = busqueda === '' ? [] : busqueda.split(/\s+/);
+        const filtrados = opcionesProductosCache.filter(p => {
+            if (terminos.length === 0) {
+                return true;
+            }
+
+            const texto = `${p.sku_codigo ?? ''} ${p.nombre_descripcion ?? ''} ${p.lote_condicion ?? ''}`.toLowerCase();
+            return terminos.every(termino => texto.includes(termino));
+        });
+
+        const textoInicial = busqueda === ''
+            ? 'Selecciona un material del almacén...'
+            : `${filtrados.length} coincidencia${filtrados.length === 1 ? '' : 's'} — elige el material`;
+
+        select.innerHTML = `<option value="">${textoInicial}</option>` + filtrados.map(p => {
+            const lote = p.lote_condicion && p.lote_condicion !== 'STOCK' ? ` · ${p.lote_condicion}` : '';
+            return `<option value="${escaparHtml(p.producto_id)}">${escaparHtml(p.sku_codigo)} — ${escaparHtml(p.nombre_descripcion)}${escaparHtml(lote)}</option>`;
+        }).join('');
+
+        if (filtrados.length === 1) {
+            select.value = String(filtrados[0].producto_id);
+        } else if (seleccionActual !== '' && filtrados.some(p => String(p.producto_id) === seleccionActual)) {
+            select.value = seleccionActual;
+        } else {
+            select.value = '';
+        }
+
+        if (busqueda === '') {
+            ayuda.textContent = `${opcionesProductosCache.length} materiales disponibles. Escribe el código para filtrar más rápido.`;
+        } else if (filtrados.length === 0) {
+            ayuda.textContent = 'No se encontró ningún material con ese código o descripción.';
+        } else if (filtrados.length === 1) {
+            ayuda.textContent = '1 coincidencia: material seleccionado automáticamente.';
+        } else {
+            ayuda.textContent = `${filtrados.length} coincidencias. Elige el material en la lista.`;
+        }
+
+        mostrarStockSeleccionado();
+    }
+
+    function mostrarStockSeleccionado() {
+        const productoId = Number(document.getElementById('danadoProducto').value);
+        const info = document.getElementById('danadoStockInfo');
+
+        if (!productoId) {
+            info.textContent = '';
+            return;
+        }
+
+        const producto = productosCache.find(p => Number(p.producto_id) === productoId);
+        if (!producto) {
+            info.textContent = '';
+            return;
+        }
+
+        info.textContent = `Stock disponible: ${formatearCantidad(producto.stock_actual)} ${producto.unidad_medida || ''}`
+            + ` · Dañado acumulado: ${formatearCantidad(producto.stock_danado || 0)}`;
+    }
+
+    function actualizarResumen() {
+        const totalUnidades = danadosCache.reduce((suma, d) => suma + Number(d.cantidad || 0), 0);
+        const materiales = new Set(danadosCache.map(d => Number(d.producto_id)));
+        const fechas = danadosCache.map(d => String(d.fecha_dano || '')).filter(Boolean).sort();
+
+        document.getElementById('totalDanados').textContent = formatearCantidad(danadosCache.length);
+        document.getElementById('totalUnidades').textContent = formatearCantidad(totalUnidades);
+        document.getElementById('totalMateriales').textContent = formatearCantidad(materiales.size);
+        document.getElementById('ultimoDanado').textContent = fechas.length ? formatearFecha(fechas[fechas.length - 1]) : '—';
+    }
+
+    function aplicarFiltro() {
+        const termino = document.getElementById('buscarDanado').value.trim().toLowerCase();
+        const contador = document.getElementById('contadorDanados');
+
+        if (termino === '') {
+            contador.textContent = `${danadosCache.length} registro${danadosCache.length === 1 ? '' : 's'}`;
+            renderizarDanados(danadosCache);
+            return;
+        }
+
+        const filtrados = danadosCache.filter(d => {
+            const texto = `${d.sku_codigo} ${d.nombre_descripcion} ${d.lote_condicion} ${d.motivo} ${d.observaciones} ${d.fecha_dano}`.toLowerCase();
+            return texto.includes(termino);
+        });
+
+        contador.textContent = `${filtrados.length} de ${danadosCache.length} registros`;
+        renderizarDanados(filtrados);
+    }
+
+    function renderizarDanados(danados) {
+        const tbody = document.querySelector('#tablaDanados tbody');
+
+        if (danados.length === 0) {
+            const mensaje = danadosCache.length === 0
+                ? 'Todavía no hay materiales dañados registrados.'
+                : 'No hay registros que coincidan con la búsqueda.';
+            tbody.innerHTML = `<tr><td colspan="12" class="vacio">${mensaje}</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = danados.map(d => `
+            <tr>
+                <td>${formatearFecha(d.fecha_dano)}</td>
+                <td><span class="codigo">${escaparHtml(d.sku_codigo)}</span></td>
+                <td class="material">${escaparHtml(d.nombre_descripcion)}</td>
+                <td class="numero">− ${formatearCantidad(d.cantidad)}</td>
+                <td>${escaparHtml(d.unidad_medida || '—')}</td>
+                <td class="motivo">${escaparHtml(d.motivo || '—')}</td>
+                <td class="observaciones">${d.observaciones ? escaparHtml(d.observaciones) : '<span class="sin-datos">—</span>'}</td>
+                <td>${formatearCantidad(d.stock_anterior)}</td>
+                <td>${formatearCantidad(d.stock_nuevo)}</td>
+                <td>${formatearCantidad(d.stock_actual)}</td>
+                <td class="numero">${formatearCantidad(d.stock_danado || 0)}</td>
+                <td>
+                    <div class="acciones">
+                        <button class="btn btn-danger" onclick="eliminarDanado(${Number(d.danado_id)})">Anular</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function abrirModal() {
+        document.getElementById('formDanado').reset();
+        document.getElementById('buscarMaterialDanado').value = '';
+        document.getElementById('danadoFecha').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('danadoCantidad').value = 1;
+        document.getElementById('danadoStockInfo').textContent = '';
+        renderizarOpcionesMateriales();
+        document.getElementById('modalDanado').style.display = 'flex';
+        document.getElementById('buscarMaterialDanado').focus();
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalDanado').style.display = 'none';
+    }
+
+    document.getElementById('formDanado').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const data = {
+            producto_id: Number(document.getElementById('danadoProducto').value),
+            cantidad: Number(document.getElementById('danadoCantidad').value),
+            fecha_dano: document.getElementById('danadoFecha').value,
+            motivo: document.getElementById('danadoMotivo').value.trim(),
+            observaciones: document.getElementById('danadoObservaciones').value.trim()
+        };
+
+        if (!data.producto_id) {
+            alert('Selecciona un material del almacén.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+
+        try {
+            const res = await apiFetch('api_danados.php?accion=crear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo registrar el material dañado.');
+            }
+
+            cerrarModal();
+            await cargarDanados();
+            await cargarProductos();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+
+    async function eliminarDanado(id) {
+        const registro = danadosCache.find(d => Number(d.danado_id) === Number(id));
+        const detalle = registro ? `"${registro.sku_codigo} — ${registro.nombre_descripcion}" (−${formatearCantidad(registro.cantidad)})` : 'este registro';
+
+        if (!confirm(`¿Anular ${detalle}?\nLa cantidad volverá al stock disponible del material.`)) {
+            return;
+        }
+
+        try {
+            const res = await apiFetch('api_danados.php?accion=eliminar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ danado_id: Number(id) })
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo anular el registro.');
+            }
+
+            await cargarDanados();
+            await cargarProductos();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+</script>
+
+</body>
+</html>

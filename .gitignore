@@ -1,0 +1,20 @@
+# Dependencias y artefactos
+node_modules/
+vendor/
+.vercel/
+*.log
+
+# Configuración sensible (credenciales reales)
+backend/.env
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+.vscode/
+
+# Respaldos locales
+*.bak
+*.zip

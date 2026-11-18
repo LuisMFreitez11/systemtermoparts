@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Termo WMS">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9D%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="css/estilos_cabecera.css">
+    <title>Termo Parts FW - Herramientas</title>
+    <script src="js/config.js"></script>
+    <script src="js/offline-db.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/app-shell.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/movil.js?v=2" defer></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #0284c7;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --bg: #f8fafc;
+            --text: #334155;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1300px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { color: var(--primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        button, .btn { padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-info { background: #0f766e; color: white; }
+        .btn-entradas { background: #6d28d9; color: white; }
+        .btn-danados { background: #991b1b; color: white; }
+        .btn-taller { background: #7c3aed; color: white; }
+        .btn-salida { background: var(--warning); color: white; }
+        .btn-historial { background: #475569; color: white; }
+        .prestadas { color: var(--warning); font-weight: 700; }
+        .disponibles { color: var(--success); font-weight: 700; }
+        .sin-disponibles { color: var(--danger); font-weight: 700; }
+        .movimiento-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 6px; padding: 10px 12px; font-size: 13px; margin: 0 0 15px; }
+        .historial-tabla { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .historial-tabla th, .historial-tabla td { font-size: 12px; padding: 8px 9px; }
+        .tipo-SALIDA { background: #fef3c7; color: #92400e; }
+        .tipo-ENTRADA { background: #dcfce7; color: #166534; }
+        .btn-light { background: #e2e8f0; color: var(--text); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 14px; vertical-align: middle; }
+        th { background: #f1f5f9; color: var(--primary); white-space: nowrap; }
+        tr:hover td { background: #f8fafc; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; padding: 15px; z-index: 50; }
+        .modal-content { background: white; padding: 28px; border-radius: 8px; width: 100%; max-width: 620px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); max-height: 92vh; overflow-y: auto; }
+        .modal-content h3 { margin-top: 0; color: var(--primary); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-group { margin-bottom: 2px; }
+        .form-group.full { grid-column: 1 / -1; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        textarea { resize: vertical; min-height: 70px; }
+        .buscador { display: flex; gap: 12px; align-items: center; margin-bottom: 5px; flex-wrap: wrap; }
+        .buscador input { max-width: 380px; }
+        #contadorHerramientas { font-size: 14px; color: #64748b; }
+        .badge { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .estado-DISPONIBLE { background: #dcfce7; color: #166534; }
+        .estado-ASIGNADA { background: #dbeafe; color: #1e40af; }
+        .estado-EN-REPARACION { background: #fef3c7; color: #92400e; }
+        .estado-BAJA { background: #fee2e2; color: #991b1b; }
+        .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+        .acciones .btn { padding: 5px 10px; font-size: 12px; }
+        .vacio { text-align: center; color: #64748b; }
+        @media (max-width: 720px) {
+            .form-grid { grid-template-columns: 1fr; }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+        }
+    </style>
+    <link rel="stylesheet" href="css/estilos_movil.css?v=2">
+</head>
+<body>
+
+<div class="container">
+    <header class="cabecera">
+        <div class="fila-titulo">
+            <h2>🔧 Control de Herramientas</h2>
+            <div class="auth-zona" data-auth></div>
+        </div>
+
+        <nav class="fila-nav" aria-label="Navegación y acciones">
+            <div class="nav-grupo">
+                <a href="index.html" class="btn btn-light">← Volver al Inventario</a>
+                <a href="activos.html" class="btn btn-info">📋 Activos</a>
+                <a href="activos_taller.html" class="btn btn-taller">🛠️ Activos de taller</a>
+                <a href="entradas.html" class="btn btn-entradas">📥 Entradas de almacén</a>
+                <a href="danados.html" class="btn btn-danados">⚠️ Dañados</a>
+            </div>
+
+            <div class="nav-grupo nav-acciones">
+                <button class="btn btn-primary" onclick="abrirModal()">+ Nueva Herramienta</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="buscador">
+        <input type="search" id="buscarHerramienta" placeholder="🔍 Buscar por código, nombre, marca o responsable..." autocomplete="off">
+        <span id="contadorHerramientas"></span>
+    </div>
+
+    <table id="tablaHerramientas">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Código</th>
+                <th>Herramienta</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Unidad</th>
+                <th>Cantidad</th>
+                <th>Prestadas</th>
+                <th>Disponibles</th>
+                <th>Estado</th>
+                <th>Ubicación</th>
+                <th>Responsable</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="13" class="vacio">Cargando herramientas...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal CRUD Herramienta -->
+<div class="modal" id="modalHerramienta">
+    <div class="modal-content">
+        <h3 id="modalTitulo">Registrar Nueva Herramienta</h3>
+        <form id="formHerramienta">
+            <input type="hidden" id="herramienta_id" name="herramienta_id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Código:</label>
+                    <input type="text" id="codigo" name="codigo" maxlength="50" required>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad:</label>
+                    <input type="number" id="cantidad" name="cantidad" min="0" max="999999" step="1" value="1" required>
+                </div>
+                <div class="form-group full">
+                    <label>Nombre de la herramienta:</label>
+                    <input type="text" id="nombre" name="nombre" maxlength="255" required>
+                </div>
+                <div class="form-group">
+                    <label>Marca:</label>
+                    <input type="text" id="marca" name="marca" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label>Modelo:</label>
+                    <input type="text" id="modelo" name="modelo" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label>Unidad de medida:</label>
+                    <input type="text" id="unidad_medida" name="unidad_medida" maxlength="20" value="UNIDAD" list="unidadesComunes">
+                    <datalist id="unidadesComunes">
+                        <option value="UNIDAD"></option>
+                        <option value="PIEZA"></option>
+                        <option value="PAR"></option>
+                        <option value="METRO"></option>
+                        <option value="PAQUETE"></option>
+                        <option value="ROLLO"></option>
+                        <option value="GALON"></option>
+                        <option value="LTS"></option>
+                        <option value="KG"></option>
+                        <option value="GRS"></option>
+                        <option value="LAM"></option>
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label>Estado:</label>
+                    <select id="estado" name="estado">
+                        <option value="DISPONIBLE">DISPONIBLE</option>
+                        <option value="ASIGNADA">ASIGNADA</option>
+                        <option value="EN REPARACION">EN REPARACION</option>
+                        <option value="BAJA">BAJA</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ubicación:</label>
+                    <input type="text" id="ubicacion" name="ubicacion" maxlength="150">
+                </div>
+                <div class="form-group full">
+                    <label>Responsable:</label>
+                    <input type="text" id="responsable" name="responsable" maxlength="150">
+                </div>
+                <div class="form-group full">
+                    <label>Observaciones:</label>
+                    <textarea id="observaciones" name="observaciones" maxlength="2000"></textarea>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-light" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" class="btn btn-success">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Movimiento de herramienta (salida / entrada) -->
+<div class="modal" id="modalMovimiento">
+    <div class="modal-content" style="max-width: 540px;">
+        <h3 id="movimientoTitulo">Registrar salida</h3>
+        <p class="movimiento-info" id="movimientoInfo"></p>
+        <form id="formMovimiento">
+            <input type="hidden" id="movimientoHerramientaId">
+            <input type="hidden" id="movimientoTipo">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="movimientoCantidad">Cantidad:</label>
+                    <input type="number" id="movimientoCantidad" min="1" max="999999" step="1" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="movimientoFecha">Fecha:</label>
+                    <input type="date" id="movimientoFecha" required>
+                </div>
+                <div class="form-group">
+                    <label for="movimientoResponsable" id="etiquetaResponsable">Responsable:</label>
+                    <input type="text" id="movimientoResponsable" maxlength="150" placeholder="Quien recibe o devuelve">
+                </div>
+                <div class="form-group">
+                    <label for="movimientoDestino">Destino / ubicación:</label>
+                    <input type="text" id="movimientoDestino" maxlength="150" placeholder="Obra, taller, cliente...">
+                </div>
+                <div class="form-group full">
+                    <label for="movimientoObservaciones">Observaciones:</label>
+                    <textarea id="movimientoObservaciones" maxlength="2000" placeholder="Detalle del movimiento..."></textarea>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-light" onclick="cerrarModalMovimiento()">Cancelar</button>
+                <button type="submit" class="btn btn-success" id="btnGuardarMovimiento">Registrar movimiento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Historial de movimientos de una herramienta -->
+<div class="modal" id="modalHistorialHerramienta">
+    <div class="modal-content" style="max-width: 1050px;">
+        <h3 id="historialHerramientaTitulo">Historial de movimientos</h3>
+        <div id="historialHerramientaContenido">
+            <p class="vacio">Cargando movimientos...</p>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 18px;">
+            <button type="button" class="btn btn-light" onclick="cerrarModalHistorial()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let herramientasCache = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarHerramientas();
+
+        document.getElementById('buscarHerramienta').addEventListener('input', aplicarFiltro);
+
+        document.getElementById('modalHerramienta').addEventListener('click', function (e) {
+            if (e.target === this) {
+                cerrarModal();
+            }
+        });
+
+        document.getElementById('modalMovimiento').addEventListener('click', function (e) {
+            if (e.target === this) {
+                cerrarModalMovimiento();
+            }
+        });
+
+        document.getElementById('modalHistorialHerramienta').addEventListener('click', function (e) {
+            if (e.target === this) {
+                cerrarModalHistorial();
+            }
+        });
+    });
+
+    function escaparHtml(valor) {
+        return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[caracter]);
+    }
+
+    async function cargarHerramientas() {
+        const tbody = document.querySelector('#tablaHerramientas tbody');
+        tbody.innerHTML = '<tr><td colspan="13" class="vacio">Cargando herramientas...</td></tr>';
+
+        try {
+            const res = await apiFetch('api_herramientas.php?accion=listar', {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            const herramientas = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                throw new Error(herramientas?.mensaje || 'El servidor respondió con estado ' + res.status);
+            }
+
+            if (!Array.isArray(herramientas)) {
+                throw new Error(herramientas?.mensaje || 'Respuesta inválida del servidor.');
+            }
+
+            herramientasCache = herramientas;
+            aplicarFiltro();
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="13" class="vacio" style="color:#dc2626;">Error al cargar las herramientas: ${escaparHtml(error.message)}</td></tr>`;
+        }
+    }
+
+    function aplicarFiltro() {
+        const termino = document.getElementById('buscarHerramienta').value.trim().toLowerCase();
+        const filtradas = termino === ''
+            ? herramientasCache
+            : herramientasCache.filter(h => [
+                h.codigo,
+                h.nombre,
+                h.marca,
+                h.modelo,
+                h.responsable,
+                h.ubicacion,
+                h.estado
+            ].some(valor => String(valor ?? '').toLowerCase().includes(termino)));
+
+        renderizarHerramientas(filtradas, termino);
+    }
+
+    function renderizarHerramientas(herramientas, termino) {
+        const tbody = document.querySelector('#tablaHerramientas tbody');
+        const contador = document.getElementById('contadorHerramientas');
+
+        contador.textContent = termino === ''
+            ? `${herramientas.length} herramienta${herramientas.length === 1 ? '' : 's'}`
+            : `${herramientas.length} de ${herramientasCache.length} herramientas`;
+
+        if (herramientas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="13" class="vacio">${termino === '' ? 'No hay herramientas registradas.' : `No se encontraron herramientas con "${escaparHtml(termino)}".`}</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = herramientas.map(h => {
+            const estado = String(h.estado ?? 'DISPONIBLE');
+            const claseEstado = 'estado-' + estado.replace(/\s+/g, '-');
+            const cantidad = Number(h.cantidad) || 0;
+            const prestadas = Number(h.cantidad_prestada) || 0;
+            const disponibles = h.cantidad_disponible !== undefined && h.cantidad_disponible !== null
+                ? Number(h.cantidad_disponible)
+                : Math.max(0, cantidad - prestadas);
+
+            return `
+                <tr>
+                    <td>${escaparHtml(h.herramienta_id)}</td>
+                    <td><strong>${escaparHtml(h.codigo)}</strong></td>
+                    <td>${escaparHtml(h.nombre)}</td>
+                    <td>${escaparHtml(h.marca || '—')}</td>
+                    <td>${escaparHtml(h.modelo || '—')}</td>
+                    <td>${escaparHtml(h.unidad_medida || 'UNIDAD')}</td>
+                    <td>${escaparHtml(h.cantidad)}</td>
+                    <td class="prestadas">${prestadas}</td>
+                    <td class="${disponibles > 0 ? 'disponibles' : 'sin-disponibles'}">${disponibles}</td>
+                    <td><span class="badge ${claseEstado}">${escaparHtml(estado)}</span></td>
+                    <td>${escaparHtml(h.ubicacion || '—')}</td>
+                    <td>${escaparHtml(h.responsable || '—')}</td>
+                    <td>
+                        <div class="acciones">
+                            <button class="btn btn-salida" title="Registrar salida (préstamo)" onclick="abrirMovimiento(${Number(h.herramienta_id)}, 'SALIDA')">− Salida</button>
+                            <button class="btn btn-success" title="Registrar entrada (devolución)" onclick="abrirMovimiento(${Number(h.herramienta_id)}, 'ENTRADA')">+ Entrada</button>
+                            <button class="btn btn-historial" onclick="verMovimientos(${Number(h.herramienta_id)})">Historial</button>
+                            <button class="btn btn-primary" onclick="editarHerramienta(${Number(h.herramienta_id)})">Editar</button>
+                            <button class="btn btn-danger" onclick="eliminarHerramienta(${Number(h.herramienta_id)})">Eliminar</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function abrirModal() {
+        document.getElementById('formHerramienta').reset();
+        document.getElementById('herramienta_id').value = '';
+        document.getElementById('unidad_medida').value = 'UNIDAD';
+        document.getElementById('cantidad').value = 1;
+        document.getElementById('estado').value = 'DISPONIBLE';
+        document.getElementById('modalTitulo').innerText = 'Registrar Nueva Herramienta';
+        document.getElementById('modalHerramienta').style.display = 'flex';
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalHerramienta').style.display = 'none';
+    }
+
+    function editarHerramienta(id) {
+        const h = herramientasCache.find(item => Number(item.herramienta_id) === Number(id));
+
+        if (!h) {
+            alert('No se encontró la herramienta seleccionada. Recarga la página e inténtalo de nuevo.');
+            return;
+        }
+
+        document.getElementById('modalTitulo').innerText = 'Editar Herramienta: ' + h.codigo;
+        document.getElementById('herramienta_id').value = h.herramienta_id;
+        document.getElementById('codigo').value = h.codigo;
+        document.getElementById('nombre').value = h.nombre;
+        document.getElementById('marca').value = h.marca || '';
+        document.getElementById('modelo').value = h.modelo || '';
+        document.getElementById('unidad_medida').value = h.unidad_medida || 'UNIDAD';
+        document.getElementById('cantidad').value = h.cantidad;
+        document.getElementById('estado').value = h.estado || 'DISPONIBLE';
+        document.getElementById('ubicacion').value = h.ubicacion || '';
+        document.getElementById('responsable').value = h.responsable || '';
+        document.getElementById('observaciones').value = h.observaciones || '';
+        document.getElementById('modalHerramienta').style.display = 'flex';
+    }
+
+    document.getElementById('formHerramienta').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const id = document.getElementById('herramienta_id').value;
+        const accion = id ? 'actualizar' : 'crear';
+        const data = Object.fromEntries(new FormData(this).entries());
+
+        ['codigo', 'nombre', 'marca', 'modelo', 'unidad_medida', 'ubicacion', 'responsable', 'observaciones'].forEach(campo => {
+            if (typeof data[campo] === 'string') {
+                data[campo] = data[campo].trim();
+            }
+        });
+
+        submitBtn.disabled = true;
+
+        try {
+            const res = await apiFetch('api_herramientas.php?accion=' + accion, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo guardar la herramienta.');
+            }
+
+            cerrarModal();
+            await cargarHerramientas();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+
+    async function eliminarHerramienta(id) {
+        const h = herramientasCache.find(item => Number(item.herramienta_id) === Number(id));
+        const nombre = h ? `"${h.codigo} - ${h.nombre}"` : 'esta herramienta';
+
+        if (!confirm(`¿Estás seguro de eliminar ${nombre}?`)) {
+            return;
+        }
+
+        try {
+            const res = await apiFetch('api_herramientas.php?accion=eliminar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ herramienta_id: Number(id) })
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo eliminar la herramienta.');
+            }
+
+            await cargarHerramientas();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    function fechaHoy() {
+        const hoy = new Date();
+        return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    }
+
+    function formatearFechaCorta(valor) {
+        const texto = String(valor ?? '').trim();
+        if (texto === '') {
+            return '—';
+        }
+
+        const [fecha] = texto.split(' ');
+        const [anio, mes, dia] = fecha.split('-');
+        return dia && mes && anio ? `${dia}/${mes}/${anio}` : escaparHtml(texto);
+    }
+
+    function formatearFechaHora(valor) {
+        const texto = String(valor ?? '').trim();
+        if (texto === '') {
+            return '—';
+        }
+
+        const [fecha, hora = ''] = texto.split(' ');
+        const [anio, mes, dia] = fecha.split('-');
+        return dia && mes && anio ? `${dia}/${mes}/${anio} ${hora.slice(0, 5)}` : escaparHtml(texto);
+    }
+
+    function abrirMovimiento(id, tipo) {
+        const h = herramientasCache.find(item => Number(item.herramienta_id) === Number(id));
+
+        if (!h) {
+            alert('No se encontró la herramienta seleccionada. Recarga la página e inténtalo de nuevo.');
+            return;
+        }
+
+        const cantidad = Number(h.cantidad) || 0;
+        const prestadas = Number(h.cantidad_prestada) || 0;
+        const disponibles = h.cantidad_disponible !== undefined && h.cantidad_disponible !== null
+            ? Number(h.cantidad_disponible)
+            : Math.max(0, cantidad - prestadas);
+
+        if (tipo === 'SALIDA' && disponibles <= 0) {
+            alert('No hay unidades disponibles de "' + h.codigo + ' - ' + h.nombre + '" para prestar.');
+            return;
+        }
+
+        if (tipo === 'ENTRADA' && prestadas <= 0) {
+            alert('No hay unidades prestadas de "' + h.codigo + ' - ' + h.nombre + '" para devolver.');
+            return;
+        }
+
+        const esSalida = tipo === 'SALIDA';
+
+        document.getElementById('movimientoHerramientaId').value = h.herramienta_id;
+        document.getElementById('movimientoTipo').value = tipo;
+        document.getElementById('movimientoCantidad').value = 1;
+        document.getElementById('movimientoCantidad').max = esSalida ? disponibles : prestadas;
+        document.getElementById('movimientoFecha').value = fechaHoy();
+        document.getElementById('movimientoResponsable').value = esSalida ? '' : (h.responsable || '');
+        document.getElementById('movimientoDestino').value = esSalida ? '' : '';
+        document.getElementById('movimientoObservaciones').value = '';
+        document.getElementById('movimientoTitulo').textContent = (esSalida ? 'Registrar salida (préstamo) · ' : 'Registrar entrada (devolución) · ') + h.codigo;
+        document.getElementById('etiquetaResponsable').textContent = esSalida ? 'Responsable (quien recibe):' : 'Responsable (quien devuelve):';
+        document.getElementById('movimientoInfo').textContent =
+            `${h.codigo} — ${h.nombre} · Total: ${cantidad} · Prestadas: ${prestadas} · Disponibles: ${disponibles}.`;
+        document.getElementById('btnGuardarMovimiento').textContent = esSalida ? 'Registrar salida' : 'Registrar entrada';
+
+        document.getElementById('modalMovimiento').style.display = 'flex';
+    }
+
+    function cerrarModalMovimiento() {
+        document.getElementById('modalMovimiento').style.display = 'none';
+    }
+
+    document.getElementById('formMovimiento').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const boton = document.getElementById('btnGuardarMovimiento');
+        const herramientaId = Number(document.getElementById('movimientoHerramientaId').value);
+        const tipo = document.getElementById('movimientoTipo').value;
+        const cantidad = Number(document.getElementById('movimientoCantidad').value);
+
+        if (!Number.isInteger(cantidad) || cantidad < 1) {
+            alert('La cantidad debe ser un número entero mayor que cero.');
+            return;
+        }
+
+        const data = {
+            herramienta_id: herramientaId,
+            tipo,
+            cantidad,
+            fecha: document.getElementById('movimientoFecha').value,
+            responsable: document.getElementById('movimientoResponsable').value.trim(),
+            destino: document.getElementById('movimientoDestino').value.trim(),
+            observaciones: document.getElementById('movimientoObservaciones').value.trim()
+        };
+
+        boton.disabled = true;
+
+        try {
+            const res = await apiFetch('api_herramientas.php?accion=registrar_movimiento', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo registrar el movimiento.');
+            }
+
+            cerrarModalMovimiento();
+            await cargarHerramientas();
+            alert(r.mensaje || 'Movimiento registrado.');
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            boton.disabled = false;
+        }
+    });
+
+    function cerrarModalHistorial() {
+        document.getElementById('modalHistorialHerramienta').style.display = 'none';
+    }
+
+    async function verMovimientos(id) {
+        const h = herramientasCache.find(item => Number(item.herramienta_id) === Number(id));
+        const titulo = document.getElementById('historialHerramientaTitulo');
+        const contenedor = document.getElementById('historialHerramientaContenido');
+
+        titulo.textContent = h
+            ? `Historial de movimientos · ${h.codigo} — ${h.nombre}`
+            : 'Historial de movimientos';
+        contenedor.innerHTML = '<p class="vacio">Cargando movimientos...</p>';
+        document.getElementById('modalHistorialHerramienta').style.display = 'flex';
+
+        try {
+            const res = await apiFetch('api_herramientas.php?accion=movimientos&herramienta_id=' + encodeURIComponent(id), {
+                headers: { 'Accept': 'application/json' }
+            });
+            const movimientos = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                throw new Error(movimientos?.mensaje || 'El servidor respondió con estado ' + res.status);
+            }
+
+            if (!Array.isArray(movimientos)) {
+                throw new Error(movimientos?.mensaje || 'Respuesta inválida del servidor.');
+            }
+
+            if (movimientos.length === 0) {
+                contenedor.innerHTML = '<p class="vacio">Esta herramienta todavía no tiene movimientos registrados.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = `<table class="historial-tabla">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Fecha</th>
+                        <th>Responsable</th>
+                        <th>Destino</th>
+                        <th>Observaciones</th>
+                        <th>Registrado por</th>
+                        <th>Registrado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${movimientos.map(m => {
+                        const tipo = String(m.tipo ?? '');
+                        const usuario = m.usuario_nombre || m.usuario || '—';
+
+                        return `<tr>
+                            <td><span class="badge tipo-${escaparHtml(tipo)}">${escaparHtml(tipo)}</span></td>
+                            <td><strong>${escaparHtml(m.cantidad)}</strong></td>
+                            <td>${formatearFechaCorta(m.fecha)}</td>
+                            <td>${escaparHtml(m.responsable || '—')}</td>
+                            <td>${escaparHtml(m.destino || '—')}</td>
+                            <td>${escaparHtml(m.observaciones || '—')}</td>
+                            <td>${escaparHtml(usuario)}</td>
+                            <td>${formatearFechaHora(m.creado_en)}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>`;
+        } catch (error) {
+            contenedor.innerHTML = `<p class="vacio" style="color:#dc2626;">Error al cargar los movimientos: ${escaparHtml(error.message)}</p>`;
+        }
+    }
+</script>
+
+</body>
+</html>

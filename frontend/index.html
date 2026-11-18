@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Termo WMS">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9D%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="css/estilos_cabecera.css">
+    <title>Termo Parts FW</title>
+    <script src="js/config.js"></script>
+    <script src="js/offline-db.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/app-shell.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/movil.js?v=2" defer></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #0284c7;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --bg: #f8fafc;
+            --text: #334155;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { color: var(--primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        button, .btn { padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-pdf { background: #b91c1c; color: white; }
+        .btn-excel { background: #15803d; color: white; }
+        .btn-light { background: #e2e8f0; color: var(--text); }
+        .btn-history { background: #475569; color: white; }
+        .btn-activos { background: #0f766e; color: white; }
+        .btn-taller { background: #7c3aed; color: white; }
+        .btn-entradas { background: #6d28d9; color: white; }
+        .btn-danados { background: #991b1b; color: white; }
+        .btn-toma { background: #b45309; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 14px; vertical-align: middle; }
+        th { background: #f1f5f9; color: var(--primary); white-space: nowrap; }
+        tr:hover td { background: #f8fafc; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; padding: 15px; z-index: 50; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 100%; max-width: 520px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); max-height: 92vh; overflow-y: auto; }
+        .modal-content.historial-content { max-width: 980px; }
+        .modal-content h3 { margin-top: 0; color: var(--primary); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        textarea { resize: vertical; min-height: 70px; }
+        .filtros { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 8px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .filtros .campo { display: flex; flex-direction: column; gap: 4px; }
+        .filtros label { margin: 0; font-size: 13px; color: #475569; }
+        .filtros input[type="search"] { min-width: 300px; }
+        .filtros select { min-width: 210px; }
+        .filtro-info { font-size: 13px; color: #64748b; margin: 0 0 5px; }
+        .toma-info { font-size: 13px; color: #92400e; margin: 0 0 8px; }
+        #contadorProductos { font-size: 14px; color: #64748b; margin-left: auto; }
+        .stock-bajo { color: var(--danger); font-weight: 700; }
+        .consumido { color: var(--warning); font-weight: 700; }
+        .incrementado { color: #166534; font-weight: 700; }
+        .danado { color: var(--danger); font-weight: 700; }
+        .toma-fisica { color: #b45309; font-weight: 700; }
+        .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+        .acciones .btn { padding: 5px 9px; font-size: 12px; }
+        .vacio { text-align: center; color: #64748b; }
+        .aviso-producto { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 12px; margin-bottom: 15px; font-size: 14px; }
+        .historial-resumen { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; margin-bottom: 12px; }
+        .tabla-historial { margin-top: 5px; }
+        .tabla-historial th, .tabla-historial td { font-size: 13px; padding: 8px 10px; }
+        .tipo-consumo { color: var(--warning); font-weight: 700; }
+        .tipo-incremento { color: #166534; font-weight: 700; }
+        .tipo-devolucion { color: #0e7490; font-weight: 700; }
+        .tipo-entrada { color: #6d28d9; font-weight: 700; }
+        .tipo-danado { color: var(--danger); font-weight: 700; }
+        @media (max-width: 900px) {
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+            .modal-content.historial-content { max-width: 100%; }
+        }
+    </style>
+    <link rel="stylesheet" href="css/estilos_movil.css?v=2">
+</head>
+<body>
+
+<div class="container">
+    <header class="cabecera">
+        <div class="fila-titulo">
+            <h2>Termo Parts FW - Gestión de Inventario</h2>
+            <div class="auth-zona" data-auth></div>
+        </div>
+
+        <nav class="fila-nav" aria-label="Navegación y acciones">
+            <div class="nav-grupo">
+                <a href="activos.html" class="btn btn-activos">📋 Activos</a>
+                <a href="activos_taller.html" class="btn btn-taller">🛠️ Activos de taller</a>
+                <a href="entradas.html" class="btn btn-entradas">📥 Entradas de almacén</a>
+                <a href="danados.html" class="btn btn-danados">⚠️ Dañados</a>
+                <a href="herramientas.html" class="btn btn-warning">🔧 Herramientas</a>
+            </div>
+
+            <div class="nav-derecha">
+                <div class="nav-grupo">
+                    <button class="btn btn-toma" onclick="registrarTomaFisica()">📋 Registrar Toma Física</button>
+                    <button class="btn btn-primary" onclick="abrirModal()">+ Nuevo Producto</button>
+                </div>
+                <div class="nav-grupo nav-reportes">
+                    <a href="../backend/public/exportar_pdf.php" target="_blank" class="btn btn-pdf" id="aReportePdf">📥 Reporte PDF</a>
+                    <a href="../backend/public/exportar_excel.php" target="_blank" class="btn btn-excel" id="aReporteExcel">📊 Reporte Excel</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="filtros">
+        <div class="campo">
+            <label for="buscarTodo">Buscar por código o descripción</label>
+            <input type="search" id="buscarTodo" placeholder="🔍 Ej: calcomania, filtro, 12033002..." autocomplete="off">
+        </div>
+        <div class="campo">
+            <label for="categoriaFiltro">Filtrar por categoría / tipo</label>
+            <select id="categoriaFiltro">
+                <option value="">Todas las categorías</option>
+            </select>
+        </div>
+        <button type="button" class="btn btn-light" onclick="limpiarFiltros()">Limpiar filtros</button>
+        <span id="contadorProductos"></span>
+    </div>
+    <p class="filtro-info" id="filtroInfo"></p>
+    <p class="toma-info" id="tomaFisicaInfo">Consultando la última toma física...</p>
+
+    <table id="tablaProductos">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Lote / Condición</th>
+                <th>Unidad</th>
+                <th title="Solo lectura: se actualiza al registrar una toma física">Toma Física Anterior</th>
+                <th>Stock Actual</th>
+                <th>Consumido</th>
+                <th>Incrementado</th>
+                <th>Dañado</th>
+                <th>Stock Mínimo</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Cargado dinámicamente vía JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal CRUD Form -->
+<div class="modal" id="modalProducto">
+    <div class="modal-content">
+        <h3 id="modalTitulo">Registrar Nuevo Producto</h3>
+        <form id="formProducto">
+            <input type="hidden" id="producto_id" name="producto_id">
+            <div class="form-group">
+                <label>Código:</label>
+                <input type="text" id="sku_codigo" name="sku_codigo" required>
+            </div>
+            <div class="form-group">
+                <label>Descripción:</label>
+                <input type="text" id="nombre_descripcion" name="nombre_descripcion" required>
+            </div>
+            <div class="form-group">
+                <label>Lote / Condición:</label>
+                <input type="text" id="lote_condicion" name="lote_condicion" list="lotesComunes" value="STOCK" maxlength="50">
+                <datalist id="lotesComunes">
+                    <option value="STOCK"></option>
+                    <option value="RENOVADO"></option>
+                    <option value="RECUPERADO"></option>
+                </datalist>
+            </div>
+            <div class="form-group">
+                <label>Unidad de Medida:</label>
+                <input type="text" id="unidad_medida" name="unidad_medida" value="PZA" required>
+            </div>
+            <div class="form-group">
+                <label>Stock Actual:</label>
+                <input type="number" step="0.001" min="0" id="stock_actual" name="stock_actual" required>
+            </div>
+            <div class="form-group">
+                <label>Stock Mínimo (Reorden):</label>
+                <input type="number" step="0.001" min="0" id="stock_minimo" name="stock_minimo" required>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-light" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" class="btn btn-success">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Ajuste de Stock (restar / incrementar) -->
+<div class="modal" id="modalAjuste">
+    <div class="modal-content">
+        <h3 id="ajusteTitulo">Ajustar Stock</h3>
+        <div class="aviso-producto" id="ajusteProducto"></div>
+        <form id="formAjuste">
+            <input type="hidden" id="ajuste_producto_id" name="producto_id">
+            <input type="hidden" id="ajuste_tipo" name="tipo">
+            <div class="form-group">
+                <label for="ajuste_cantidad">Cantidad:</label>
+                <input type="number" step="0.001" min="0.001" id="ajuste_cantidad" name="cantidad" required>
+            </div>
+            <div class="form-group">
+                <label for="ajuste_motivo">Motivo / destino (opcional):</label>
+                <input type="text" id="ajuste_motivo" name="motivo" maxlength="255" placeholder="Ej: consumo en calle, taller, devolución, compra...">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-light" onclick="cerrarModalAjuste()">Cancelar</button>
+                <button type="submit" class="btn btn-success" id="ajusteSubmit">Aplicar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Historial de movimientos -->
+<div class="modal" id="modalHistorial">
+    <div class="modal-content historial-content">
+        <h3 id="historialTitulo">Historial del producto</h3>
+        <div class="aviso-producto" id="historialProducto"></div>
+        <div class="historial-resumen" id="historialResumen"></div>
+        <table class="tabla-historial">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Movimiento</th>
+                    <th>Cantidad</th>
+                    <th>Motivo / destino</th>
+                    <th>Stock antes</th>
+                    <th>Stock después</th>
+                </tr>
+            </thead>
+            <tbody id="historialTbody">
+                <tr><td colspan="6" class="vacio">Cargando historial...</td></tr>
+            </tbody>
+        </table>
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+            <button type="button" class="btn btn-light" onclick="cerrarModalHistorial()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let productosCache = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarProductos();
+        cargarUltimaToma();
+
+        document.getElementById('buscarTodo').addEventListener('input', aplicarFiltro);
+        document.getElementById('categoriaFiltro').addEventListener('change', aplicarFiltro);
+
+        document.getElementById('modalProducto').addEventListener('click', function (e) {
+            if (e.target === this) {
+                cerrarModal();
+            }
+        });
+
+        document.getElementById('modalAjuste').addEventListener('click', function (e) {
+            if (e.target === this) {
+                cerrarModalAjuste();
+            }
+        });
+
+        document.getElementById('modalHistorial').addEventListener('click', function (e) {
+            if (e.target === this) {
+                cerrarModalHistorial();
+            }
+        });
+    });
+
+    function escaparHtml(valor) {
+        return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[caracter]);
+    }
+
+    const formatoCantidad = new Intl.NumberFormat('es-VE', { maximumFractionDigits: 3 });
+
+    function formatearCantidad(valor) {
+        const numero = Number(valor);
+        return Number.isFinite(numero) ? escaparHtml(formatoCantidad.format(numero)) : escaparHtml(valor);
+    }
+
+    function formatearFechaHora(valor) {
+        const texto = String(valor ?? '').trim();
+        if (texto === '') {
+            return '—';
+        }
+
+        const [fecha, hora = ''] = texto.split(' ');
+        const [anio, mes, dia] = fecha.split('-');
+        const horaCorta = hora.slice(0, 5);
+
+        return `${dia || ''}/${mes || ''}/${anio || ''}${horaCorta ? ' ' + horaCorta : ''}`.trim();
+    }
+
+    async function cargarUltimaToma() {
+        const info = document.getElementById('tomaFisicaInfo');
+
+        try {
+            const res = await apiFetch('api.php?accion=ultima_toma', {
+                headers: { 'Accept': 'application/json' }
+            });
+            const toma = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                throw new Error(toma?.mensaje || 'El servidor respondió con estado ' + res.status);
+            }
+
+            if (!toma) {
+                info.textContent = 'Toma física anterior: valores iniciales cargados. Aún no se ha registrado una toma desde el sistema; la columna es solo lectura.';
+                return;
+            }
+
+            info.textContent = `Última toma física: ${formatearFechaHora(toma.registrada_en)} · ${formatearCantidad(toma.total_productos)} materiales · ${formatearCantidad(toma.total_unidades)} unidades. Columna solo lectura.`;
+        } catch (error) {
+            info.textContent = 'No se pudo consultar la última toma física: ' + error.message;
+        }
+    }
+
+    async function registrarTomaFisica() {
+        const total = productosCache.length;
+        const confirmado = confirm(
+            `¿Registrar la toma física con el stock actual de ${total} materiales?\n\n`
+            + 'Se guardará el stock actual de cada material como Toma Física Anterior y se reemplazarán los valores anteriores.'
+        );
+
+        if (!confirmado) {
+            return;
+        }
+
+        const boton = document.querySelector('.btn-toma');
+        boton.disabled = true;
+        boton.textContent = '⏳ Registrando...';
+
+        try {
+            const res = await apiFetch('api.php?accion=registrar_toma_fisica', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo registrar la toma física.');
+            }
+
+            await cargarProductos();
+            await cargarUltimaToma();
+            alert(r.mensaje || 'Toma física registrada.');
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            boton.disabled = false;
+            boton.textContent = '📋 Registrar Toma Física';
+        }
+    }
+
+    async function cargarProductos() {
+        const tbody = document.querySelector('#tablaProductos tbody');
+        tbody.innerHTML = '<tr><td colspan="12" class="vacio">Cargando productos...</td></tr>';
+
+        try {
+            const res = await apiFetch('api.php?accion=listar', {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            const productos = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                throw new Error(productos?.mensaje || 'El servidor respondió con estado ' + res.status);
+            }
+
+            if (!Array.isArray(productos)) {
+                throw new Error(productos?.mensaje || 'Respuesta inválida del servidor.');
+            }
+
+            productosCache = productos;
+
+            const datalistLotes = document.getElementById('lotesComunes');
+            if (datalistLotes) {
+                const lotes = [...new Set(productos.map(p => p.lote_condicion).filter(Boolean))]
+                    .sort((a, b) => a.localeCompare(b, 'es'));
+                datalistLotes.innerHTML = lotes.map(lote => `<option value="${escaparHtml(lote)}"></option>`).join('');
+            }
+
+            actualizarCategorias();
+
+            if (productos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" class="vacio">No hay productos registrados.</td></tr>';
+                document.getElementById('contadorProductos').textContent = '';
+                document.getElementById('filtroInfo').textContent = '';
+                actualizarEnlacesExportacion();
+                return;
+            }
+
+            aplicarFiltro();
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="12" class="vacio" style="color:#dc2626;">Error al cargar los productos: ${escaparHtml(error.message)}</td></tr>`;
+        }
+    }
+
+    function actualizarCategorias() {
+        const select = document.getElementById('categoriaFiltro');
+        const seleccionada = select.value;
+        const categorias = [...new Set(productosCache.map(p => p.categoria || 'OTROS').filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, 'es'));
+
+        select.innerHTML = '<option value="">Todas las categorías</option>' + categorias
+            .map(categoria => `<option value="${escaparHtml(categoria)}">${escaparHtml(categoria)}</option>`)
+            .join('');
+
+        if (categorias.includes(seleccionada)) {
+            select.value = seleccionada;
+        }
+    }
+
+    function aplicarFiltro() {
+        const termino = document.getElementById('buscarTodo').value.trim().toLowerCase();
+        const categoria = document.getElementById('categoriaFiltro').value;
+
+        const filtrados = productosCache.filter(p => {
+            const texto = `${p.sku_codigo ?? ''} ${p.nombre_descripcion ?? ''} ${p.categoria ?? ''}`.toLowerCase();
+            const coincideTexto = termino === '' || texto.includes(termino);
+            const coincideCategoria = categoria === '' || (p.categoria || 'OTROS') === categoria;
+
+            return coincideTexto && coincideCategoria;
+        });
+
+        renderizarProductos(filtrados, termino, categoria);
+        actualizarEnlacesExportacion();
+    }
+
+    function renderizarProductos(productos, termino, categoria) {
+        const tbody = document.querySelector('#tablaProductos tbody');
+        const contador = document.getElementById('contadorProductos');
+        const filtroInfo = document.getElementById('filtroInfo');
+
+        contador.textContent = productos.length === productosCache.length
+            ? `${productos.length} producto${productos.length === 1 ? '' : 's'}`
+            : `${productos.length} de ${productosCache.length} productos`;
+
+        const partesFiltro = [];
+        if (categoria !== '') {
+            partesFiltro.push('categoría ' + categoria);
+        }
+        if (termino !== '') {
+            partesFiltro.push('búsqueda "' + termino + '"');
+        }
+
+        filtroInfo.textContent = partesFiltro.length === 0
+            ? 'Mostrando todos los productos. Usa la categoría o la búsqueda para filtrar.'
+            : 'Filtro aplicado: ' + partesFiltro.join(' · ') + '.';
+
+        if (productos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="12" class="vacio">No se encontraron productos con los filtros seleccionados.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = productos.map(p => {
+            const stockActual = Number(p.stock_actual);
+            const stockMinimo = Number(p.stock_minimo);
+            const bajo = Number.isFinite(stockActual) && Number.isFinite(stockMinimo) && stockActual <= stockMinimo;
+
+            return `
+                <tr>
+                    <td>${escaparHtml(p.producto_id)}</td>
+                    <td><strong>${escaparHtml(p.sku_codigo)}</strong></td>
+                    <td>${escaparHtml(p.nombre_descripcion)}</td>
+                    <td>${escaparHtml(p.lote_condicion || 'STOCK')}</td>
+                    <td>${escaparHtml(p.unidad_medida)}</td>
+                    <td class="toma-fisica">${formatearCantidad(p.toma_fisica_anterior || 0)}</td>
+                    <td class="${bajo ? 'stock-bajo' : ''}" title="${bajo ? 'Stock igual o por debajo del mínimo' : ''}">${formatearCantidad(p.stock_actual)}</td>
+                    <td class="consumido">${formatearCantidad(p.stock_consumido || 0)}</td>
+                    <td class="incrementado">${formatearCantidad(p.stock_incrementado || 0)}</td>
+                    <td class="danado">${formatearCantidad(p.stock_danado || 0)}</td>
+                    <td>${formatearCantidad(p.stock_minimo)}</td>
+                    <td>
+                        <div class="acciones">
+                            <button class="btn btn-warning" onclick="abrirAjuste(${Number(p.producto_id)}, 'restar')">− Restar</button>
+                            <button class="btn btn-success" onclick="abrirAjuste(${Number(p.producto_id)}, 'sumar')">+ Incrementar</button>
+                            <button class="btn btn-history" onclick="abrirHistorial(${Number(p.producto_id)})">Historial</button>
+                            <button class="btn btn-primary" onclick="editarProducto(${Number(p.producto_id)})">Editar</button>
+                            <button class="btn btn-danger" onclick="eliminarProducto(${Number(p.producto_id)})">Eliminar</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function limpiarFiltros() {
+        document.getElementById('buscarTodo').value = '';
+        document.getElementById('categoriaFiltro').value = '';
+        aplicarFiltro();
+    }
+
+    function actualizarEnlacesExportacion() {
+        const buscar = document.getElementById('buscarTodo').value.trim();
+        const categoria = document.getElementById('categoriaFiltro').value;
+        const params = new URLSearchParams();
+
+        if (buscar !== '') {
+            params.set('buscar', buscar);
+        }
+        if (categoria !== '') {
+            params.set('categoria', categoria);
+        }
+
+        const query = params.toString() === '' ? '' : '?' + params.toString();
+        document.getElementById('aReportePdf').href = WmsApi.url('exportar_pdf.php') + query;
+        document.getElementById('aReporteExcel').href = WmsApi.url('exportar_excel.php') + query;
+    }
+
+    function abrirModal() {
+        document.getElementById('formProducto').reset();
+        document.getElementById('producto_id').value = '';
+        document.getElementById('modalTitulo').innerText = 'Registrar Nuevo Producto';
+        document.getElementById('modalProducto').style.display = 'flex';
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalProducto').style.display = 'none';
+    }
+
+    function editarProducto(id) {
+        const p = productosCache.find(producto => Number(producto.producto_id) === Number(id));
+
+        if (!p) {
+            alert('No se encontró el producto seleccionado. Recarga la página e inténtalo de nuevo.');
+            return;
+        }
+
+        document.getElementById('modalTitulo').innerText = 'Editar Producto: ' + p.sku_codigo;
+        document.getElementById('producto_id').value = p.producto_id;
+        document.getElementById('sku_codigo').value = p.sku_codigo;
+        document.getElementById('nombre_descripcion').value = p.nombre_descripcion;
+        document.getElementById('lote_condicion').value = p.lote_condicion || 'STOCK';
+        document.getElementById('unidad_medida').value = p.unidad_medida;
+        document.getElementById('stock_actual').value = p.stock_actual;
+        document.getElementById('stock_minimo').value = p.stock_minimo;
+        document.getElementById('modalProducto').style.display = 'flex';
+    }
+
+    function abrirAjuste(id, tipo) {
+        const p = productosCache.find(producto => Number(producto.producto_id) === Number(id));
+
+        if (!p) {
+            alert('No se encontró el producto seleccionado. Recarga la página e inténtalo de nuevo.');
+            return;
+        }
+
+        document.getElementById('formAjuste').reset();
+        document.getElementById('ajuste_producto_id').value = p.producto_id;
+        document.getElementById('ajuste_tipo').value = tipo;
+        document.getElementById('ajusteTitulo').innerText = tipo === 'restar' ? 'Restar stock (consumo)' : 'Incrementar stock';
+        document.getElementById('ajusteSubmit').className = tipo === 'restar' ? 'btn btn-danger' : 'btn btn-success';
+        document.getElementById('ajusteSubmit').innerText = tipo === 'restar' ? 'Restar del stock' : 'Incrementar stock';
+        document.getElementById('ajusteProducto').innerHTML = `
+            <strong>${escaparHtml(p.sku_codigo)}</strong> - ${escaparHtml(p.nombre_descripcion)}<br>
+            Stock actual: <strong>${formatearCantidad(p.stock_actual)}</strong> ${escaparHtml(p.unidad_medida)} ·
+            Consumido: <strong>${formatearCantidad(p.stock_consumido || 0)}</strong> ·
+            Incrementado: <strong>${formatearCantidad(p.stock_incrementado || 0)}</strong> ·
+            Dañado: <strong>${formatearCantidad(p.stock_danado || 0)}</strong><br>
+            <small>${tipo === 'restar' ? 'La cantidad restada se sumará al total consumido.' : 'La cantidad incrementada se sumará al total incrementado.'}</small>
+        `;
+        document.getElementById('modalAjuste').style.display = 'flex';
+        document.getElementById('ajuste_cantidad').focus();
+    }
+
+    function cerrarModalAjuste() {
+        document.getElementById('formAjuste').reset();
+        document.getElementById('ajuste_producto_id').value = '';
+        document.getElementById('ajuste_tipo').value = '';
+        document.getElementById('modalAjuste').style.display = 'none';
+    }
+
+    async function abrirHistorial(id) {
+        const p = productosCache.find(producto => Number(producto.producto_id) === Number(id));
+
+        if (!p) {
+            alert('No se encontró el producto seleccionado. Recarga la página e inténtalo de nuevo.');
+            return;
+        }
+
+        document.getElementById('historialTitulo').innerText = 'Historial: ' + p.sku_codigo;
+        document.getElementById('historialProducto').innerHTML = `
+            <strong>${escaparHtml(p.sku_codigo)}</strong> - ${escaparHtml(p.nombre_descripcion)}<br>
+            Categoría: <strong>${escaparHtml(p.categoria || 'OTROS')}</strong>
+        `;
+        document.getElementById('historialResumen').innerHTML = `
+            <span class="toma-fisica">Toma física anterior: ${formatearCantidad(p.toma_fisica_anterior || 0)}</span>
+            <span>Stock actual: <strong>${formatearCantidad(p.stock_actual)}</strong></span>
+            <span class="consumido">Consumido total: ${formatearCantidad(p.stock_consumido || 0)}</span>
+            <span class="incrementado">Incrementado total: ${formatearCantidad(p.stock_incrementado || 0)}</span>
+            <span class="danado">Dañado total: ${formatearCantidad(p.stock_danado || 0)}</span>
+        `;
+        document.getElementById('historialTbody').innerHTML = '<tr><td colspan="6" class="vacio">Cargando historial...</td></tr>';
+        document.getElementById('modalHistorial').style.display = 'flex';
+
+        try {
+            const res = await apiFetch('api.php?accion=historial&producto_id=' + encodeURIComponent(Number(id)), {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            const movimientos = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                throw new Error(movimientos?.mensaje || 'El servidor respondió con estado ' + res.status);
+            }
+
+            if (!Array.isArray(movimientos)) {
+                throw new Error(movimientos?.mensaje || 'Respuesta inválida del servidor.');
+            }
+
+            if (movimientos.length === 0) {
+                document.getElementById('historialTbody').innerHTML = '<tr><td colspan="6" class="vacio">Este producto todavía no tiene movimientos registrados.</td></tr>';
+                return;
+            }
+
+            document.getElementById('historialTbody').innerHTML = movimientos.map(m => {
+                const etiquetas = {
+                    CONSUMO: { clase: 'tipo-consumo', texto: 'Consumido' },
+                    INCREMENTO: { clase: 'tipo-incremento', texto: 'Incrementado' },
+                    DEVOLUCION: { clase: 'tipo-devolucion', texto: 'Devuelto' },
+                    ENTRADA: { clase: 'tipo-entrada', texto: 'Entrada' },
+                    DANADO: { clase: 'tipo-danado', texto: 'Dañado' }
+                };
+                const etiqueta = etiquetas[m.tipo] || { clase: 'tipo-incremento', texto: m.tipo };
+
+                return `
+                    <tr>
+                        <td>${escaparHtml(formatearFechaHora(m.creado_en))}</td>
+                        <td><span class="${etiqueta.clase}">${etiqueta.texto}</span></td>
+                        <td>${formatearCantidad(m.cantidad)}</td>
+                        <td>${escaparHtml(m.motivo || '—')}</td>
+                        <td>${formatearCantidad(m.stock_anterior)}</td>
+                        <td>${formatearCantidad(m.stock_nuevo)}</td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (error) {
+            document.getElementById('historialTbody').innerHTML = `<tr><td colspan="6" class="vacio" style="color:#dc2626;">Error al cargar el historial: ${escaparHtml(error.message)}</td></tr>`;
+        }
+    }
+
+    function cerrarModalHistorial() {
+        document.getElementById('modalHistorial').style.display = 'none';
+    }
+
+    document.getElementById('formProducto').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const id = document.getElementById('producto_id').value;
+        const accion = id ? 'actualizar' : 'crear';
+        const data = Object.fromEntries(new FormData(this).entries());
+
+        data.sku_codigo = data.sku_codigo.trim();
+        data.nombre_descripcion = data.nombre_descripcion.trim();
+        data.unidad_medida = data.unidad_medida.trim();
+
+        submitBtn.disabled = true;
+
+        try {
+            const res = await apiFetch('api.php?accion=' + accion, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo guardar el producto.');
+            }
+
+            cerrarModal();
+            await cargarProductos();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+
+    document.getElementById('formAjuste').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const submitBtn = document.getElementById('ajusteSubmit');
+        const data = Object.fromEntries(new FormData(this).entries());
+
+        data.producto_id = Number(data.producto_id);
+        data.cantidad = Number(data.cantidad);
+        data.motivo = (data.motivo || '').trim();
+
+        submitBtn.disabled = true;
+
+        try {
+            const res = await apiFetch('api.php?accion=ajustar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo ajustar el stock.');
+            }
+
+            cerrarModalAjuste();
+            await cargarProductos();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+
+    async function eliminarProducto(id) {
+        const p = productosCache.find(producto => Number(producto.producto_id) === Number(id));
+        const nombre = p ? `"${p.sku_codigo} - ${p.nombre_descripcion}"` : 'este producto';
+
+        if (!confirm(`¿Estás seguro de eliminar ${nombre} del inventario?`)) {
+            return;
+        }
+
+        try {
+            const res = await apiFetch('api.php?accion=eliminar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ producto_id: Number(id) })
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo eliminar el producto.');
+            }
+
+            await cargarProductos();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+</script>
+
+</body>
+</html>

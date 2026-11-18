@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Termo Part WMS">
+    <rect width="512" height="512" fill="#1e3a8a"/>
+    <g transform="translate(256 256) scale(0.72) translate(-256 -256)">
+        <g stroke="#ffffff" stroke-width="22" stroke-linecap="round" fill="none">
+            <path d="M256 118v276"/>
+            <path d="M138 188l236 136"/>
+            <path d="M374 188L138 324"/>
+            <path d="M196 142l60 34 60-34"/>
+            <path d="M196 370l60-34 60 34"/>
+        </g>
+        <g fill="#ffffff">
+            <rect x="150" y="300" width="212" height="26" rx="13"/>
+            <rect x="150" y="346" width="212" height="26" rx="13"/>
+        </g>
+        <circle cx="256" cy="118" r="28" fill="#ffffff"/>
+    </g>
+</svg>

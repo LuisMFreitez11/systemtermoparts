@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Termo Part WMS">
+    <defs>
+        <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#1e3a8a"/>
+            <stop offset="1" stop-color="#0e7490"/>
+        </linearGradient>
+    </defs>
+    <rect width="512" height="512" rx="96" fill="url(#fondo)"/>
+    <g stroke="#ffffff" stroke-width="20" stroke-linecap="round" fill="none">
+        <path d="M256 118v276"/>
+        <path d="M138 188l236 136"/>
+        <path d="M374 188L138 324"/>
+        <path d="M196 142l60 34 60-34"/>
+        <path d="M196 370l60-34 60 34"/>
+    </g>
+    <g fill="#ffffff">
+        <rect x="150" y="300" width="212" height="24" rx="12"/>
+        <rect x="150" y="344" width="212" height="24" rx="12"/>
+    </g>
+    <circle cx="256" cy="118" r="26" fill="#ffffff"/>
+</svg>
