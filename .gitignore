@@ -6,6 +6,7 @@ vendor/
 
 # Configuración sensible (credenciales reales)
 backend/.env
+legacy/backend/.env
 server/.env
 .env
 .env.local

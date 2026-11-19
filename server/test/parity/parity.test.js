@@ -6,8 +6,8 @@
  *   $env:RUN_INTEGRATION = '1'
  *   node --test server/test/parity/
  *
- * Requiere PHP CLI en C:\xampp\php\php.exe (o PHP_BIN) y el archivo
- * backend/.env con las credenciales.
+ * Requiere PHP CLI en C:\xampp\php\php.exe (o PHP_BIN) y las credenciales en
+ * legacy/backend/.env (o server/.env).
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,7 +22,7 @@ import { RAIZ_PROYECTO } from '../../src/config.js';
 const HABILITADO = process.env.RUN_INTEGRATION === '1';
 const PHP = process.env.PHP_BIN ?? 'C:/xampp/php/php.exe';
 const PUERTO = Number(process.env.PHP_PORT ?? 8099);
-const DOCROOT = path.join(RAIZ_PROYECTO, 'backend', 'public');
+const DOCROOT = path.join(RAIZ_PROYECTO, 'legacy', 'backend', 'public');
 
 const USUARIO = process.env.ADMIN_USER ?? 'admin';
 const CLAVE = process.env.ADMIN_PASS ?? 'admin123';

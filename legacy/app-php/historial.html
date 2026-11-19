@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9D%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="estilos_cabecera.css">
+    <title>Termo Parts FW - Historial de movimientos</title>
+    <script src="auth.js" defer></script>
+    <script src="movil.js?v=1" defer></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #0284c7;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --info: #0f766e;
+            --bg: #f8fafc;
+            --text: #334155;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { color: var(--primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        button, .btn { padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-light { background: #e2e8f0; color: var(--text); }
+        .btn-activos { background: #0f766e; color: white; }
+        .btn-entradas { background: #6d28d9; color: white; }
+        .btn-danados { background: #991b1b; color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-taller { background: #7c3aed; color: white; }
+        .filtros { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin: 18px 0 8px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .campo { display: flex; flex-direction: column; gap: 4px; }
+        .campo label { font-size: 13px; color: #475569; font-weight: 600; }
+        input, select { padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 14px; box-sizing: border-box; }
+        .campo input[type="search"] { min-width: 280px; }
+        .resumen { font-size: 13px; color: #64748b; margin: 4px 0 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 13px; vertical-align: top; }
+        th { background: #f1f5f9; color: var(--primary); white-space: nowrap; }
+        tr:hover td { background: #f8fafc; }
+        .vacio { text-align: center; color: #64748b; }
+        .badge { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; background: #e2e8f0; color: #334155; }
+        .accion-INICIO_SESION, .accion-CIERRE_SESION { background: #e0f2fe; color: #075985; }
+        .accion-CREAR_PRODUCTO, .accion-ENTRADA_ALMACEN, .accion-CREAR_ACTIVO, .accion-CREAR_HERRAMIENTA, .accion-SALIDA_HERRAMIENTA, .accion-TOMA_FISICA { background: #dcfce7; color: #166534; }
+        .accion-ACTUALIZAR_PRODUCTO, .accion-ACTUALIZAR_ACTIVO, .accion-ACTUALIZAR_HERRAMIENTA, .accion-CAMBIO_CLAVE { background: #fef3c7; color: #92400e; }
+        .accion-ELIMINAR_PRODUCTO, .accion-ANULAR_ENTRADA, .accion-DANADO, .accion-ANULAR_DANADO, .accion-ELIMINAR_ACTIVO, .accion-ELIMINAR_HERRAMIENTA, .accion-ENTRADA_HERRAMIENTA { background: #fee2e2; color: #991b1b; }
+        .ip { color: #94a3b8; font-size: 12px; }
+        @media (max-width: 900px) {
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+            .campo input[type="search"] { min-width: 220px; }
+        }
+    </style>
+    <link rel="stylesheet" href="estilos_movil.css?v=1">
+</head>
+<body>
+
+<div class="container">
+    <header class="cabecera">
+        <div class="fila-titulo">
+            <h2>🕘 Historial de movimientos del usuario</h2>
+            <div class="auth-zona" data-auth></div>
+        </div>
+
+        <nav class="fila-nav" aria-label="Navegación">
+            <div class="nav-grupo">
+                <a href="index.html" class="btn btn-light">← Volver al Inventario</a>
+                <a href="activos.html" class="btn btn-activos">📋 Activos</a>
+                <a href="activos_taller.html" class="btn btn-taller">🛠️ Activos de taller</a>
+                <a href="entradas.html" class="btn btn-entradas">📥 Entradas</a>
+                <a href="danados.html" class="btn btn-danados">⚠️ Dañados</a>
+                <a href="herramientas.html" class="btn btn-warning">🔧 Herramientas</a>
+            </div>
+        </nav>
+    </header>
+
+    <p class="resumen" id="resumenHistorial">Consultando los movimientos...</p>
+
+    <form class="filtros" id="formFiltros">
+        <div class="campo">
+            <label for="buscarHistorial">Buscar</label>
+            <input type="search" id="buscarHistorial" placeholder="🔍 Acción, detalle, usuario o IP..." autocomplete="off">
+        </div>
+        <div class="campo" id="campoUsuario" style="display: none;">
+            <label for="usuarioFiltro">Usuario</label>
+            <select id="usuarioFiltro">
+                <option value="">Todos los usuarios</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="desde">Desde</label>
+            <input type="date" id="desde">
+        </div>
+        <div class="campo">
+            <label for="hasta">Hasta</label>
+            <input type="date" id="hasta">
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <button type="button" class="btn btn-light" onclick="limpiarFiltros()">Limpiar filtros</button>
+    </form>
+
+    <table id="tablaHistorial">
+        <thead>
+            <tr>
+                <th>Fecha y hora</th>
+                <th>Usuario</th>
+                <th>Acción</th>
+                <th>Detalle</th>
+                <th>IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="5" class="vacio">Cargando movimientos...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    let usuarioSesion = null;
+
+    function escaparHtml(valor) {
+        return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[caracter]);
+    }
+
+    function formatearFechaHora(valor) {
+        const texto = String(valor ?? '').trim();
+        if (texto === '') {
+            return '—';
+        }
+
+        const [fecha, hora = ''] = texto.split(' ');
+        const [anio, mes, dia] = fecha.split('-');
+        if (!anio || !mes || !dia) {
+            return escaparHtml(texto);
+        }
+
+        return `${dia}/${mes}/${anio} ${hora.slice(0, 5)}`;
+    }
+
+    function nombreAccion(accion) {
+        return String(accion ?? '')
+            .replace(/_/g, ' ')
+            .toLowerCase()
+            .replace(/^\p{L}/u, letra => letra.toUpperCase());
+    }
+
+    async function cargarUsuariosFiltro() {
+        if (!usuarioSesion || usuarioSesion.rol !== 'ADMIN') {
+            return;
+        }
+
+        try {
+            const res = await fetch('api_historial.php?accion=usuarios', {
+                headers: { 'Accept': 'application/json' }
+            });
+            const usuarios = await res.json().catch(() => null);
+
+            if (!res.ok || !Array.isArray(usuarios)) {
+                return;
+            }
+
+            const select = document.getElementById('usuarioFiltro');
+            select.innerHTML = '<option value="">Todos los usuarios</option>' + usuarios.map(u =>
+                `<option value="${escaparHtml(u)}">${escaparHtml(u)}</option>`
+            ).join('');
+
+            document.getElementById('campoUsuario').style.display = 'flex';
+        } catch (error) {
+            // Si falla, el filtro de usuario simplemente no se muestra.
+        }
+    }
+
+    async function cargarHistorial() {
+        const tbody = document.querySelector('#tablaHistorial tbody');
+        const resumen = document.getElementById('resumenHistorial');
+        const parametros = new URLSearchParams();
+
+        const buscar = document.getElementById('buscarHistorial').value.trim();
+        const usuarioFiltro = document.getElementById('usuarioFiltro').value;
+        const desde = document.getElementById('desde').value;
+        const hasta = document.getElementById('hasta').value;
+
+        if (buscar !== '') {
+            parametros.set('buscar', buscar);
+        }
+        if (usuarioFiltro !== '') {
+            parametros.set('usuario', usuarioFiltro);
+        }
+        if (desde !== '') {
+            parametros.set('desde', desde);
+        }
+        if (hasta !== '') {
+            parametros.set('hasta', hasta);
+        }
+
+        tbody.innerHTML = '<tr><td colspan="5" class="vacio">Cargando movimientos...</td></tr>';
+
+        try {
+            const res = await fetch('api_historial.php?accion=listar&' + parametros.toString(), {
+                headers: { 'Accept': 'application/json' }
+            });
+            const movimientos = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                throw new Error(movimientos?.mensaje || 'El servidor respondió con estado ' + res.status);
+            }
+
+            if (!Array.isArray(movimientos)) {
+                throw new Error(movimientos?.mensaje || 'Respuesta inválida del servidor.');
+            }
+
+            const alcance = usuarioSesion && usuarioSesion.rol === 'ADMIN'
+                ? 'de todos los usuarios'
+                : 'de tu usuario';
+
+            resumen.textContent = `${movimientos.length} movimiento${movimientos.length === 1 ? '' : 's'} ${alcance}.`;
+
+            if (movimientos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="vacio">No hay movimientos que coincidan con los filtros.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = movimientos.map(m => {
+                const accion = String(m.accion ?? '');
+                const clase = 'badge accion-' + accion.replace(/[^A-Za-z0-9_]/g, '_');
+
+                return `<tr>
+                    <td>${formatearFechaHora(m.creado_en)}</td>
+                    <td><strong>${escaparHtml(m.usuario || '—')}</strong></td>
+                    <td><span class="${clase}">${escaparHtml(nombreAccion(accion))}</span></td>
+                    <td>${escaparHtml(m.detalle || '—')}</td>
+                    <td class="ip">${escaparHtml(m.ip || '—')}</td>
+                </tr>`;
+            }).join('');
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="5" class="vacio" style="color:#dc2626;">Error al cargar el historial: ${escaparHtml(error.message)}</td></tr>`;
+            resumen.textContent = '';
+        }
+    }
+
+    function limpiarFiltros() {
+        document.getElementById('buscarHistorial').value = '';
+        document.getElementById('usuarioFiltro').value = '';
+        document.getElementById('desde').value = '';
+        document.getElementById('hasta').value = '';
+        cargarHistorial();
+    }
+
+    document.getElementById('formFiltros').addEventListener('submit', function (e) {
+        e.preventDefault();
+        cargarHistorial();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.Auth) {
+            return;
+        }
+
+        Auth.listo.then(usuario => {
+            usuarioSesion = usuario;
+
+            if (!usuario) {
+                return;
+            }
+
+            cargarUsuariosFiltro();
+            cargarHistorial();
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9D%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <title>Termo Parts FW - Iniciar sesión</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #0284c7;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg: #eef2f7;
+            --text: #334155;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%);
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 14px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.28);
+            padding: 34px 30px 26px;
+        }
+        .login-logo {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin: 0 0 14px;
+        }
+        .subtitulo { text-align: center; color: #64748b; font-size: 14px; margin: 0 0 24px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+        input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 15px;
+            margin-bottom: 15px;
+            outline: none;
+        }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); }
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover { background: #172f6d; }
+        button:disabled { opacity: 0.65; cursor: wait; }
+        .error {
+            display: none;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+        .ayuda {
+            margin-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 14px;
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.55;
+        }
+        .ayuda strong { color: #475569; }
+        .volver { display: block; text-align: center; margin-top: 14px; color: #64748b; font-size: 13px; text-decoration: none; }
+        .volver:hover { color: var(--primary); text-decoration: underline; }
+    </style>
+    <link rel="stylesheet" href="estilos_movil.css?v=1">
+</head>
+<body>
+
+<div class="login-card">
+    <img class="login-logo" src="logo_termo_parts.jpg" alt="Termo Parts FW, C.A. - Soluciones en frío y calor">
+    <p class="subtitulo">Sistema de inventario y almacén</p>
+
+    <div class="error" id="mensajeError"></div>
+
+    <form id="formLogin" autocomplete="on">
+        <label for="usuario">Usuario</label>
+        <input type="text" id="usuario" name="usuario" maxlength="50" autocomplete="username" required autofocus>
+
+        <label for="clave">Clave</label>
+        <input type="password" id="clave" name="clave" maxlength="200" autocomplete="current-password" required>
+
+        <button type="submit" id="btnIngresar">Ingresar al sistema</button>
+    </form>  
+</div>
+
+<script>
+    const parametros = new URLSearchParams(window.location.search);
+    const destinoSolicitado = parametros.get('redirect') || '';
+
+    // Solo se permiten destinos internos del sistema.
+    const destino = /^[\w.\-]+\.html(\?[^#]*)?$/.test(destinoSolicitado) && !/login\.html/i.test(destinoSolicitado)
+        ? destinoSolicitado
+        : 'index.html';
+
+    function mostrarError(mensaje) {
+        const caja = document.getElementById('mensajeError');
+        caja.textContent = mensaje;
+        caja.style.display = 'block';
+    }
+
+    function ocultarError() {
+        document.getElementById('mensajeError').style.display = 'none';
+    }
+
+    async function verificarSesionActiva() {
+        try {
+            const res = await fetch('api_sesion.php?accion=estado', {
+                cache: 'no-store',
+                headers: { 'Accept': 'application/json' }
+            });
+            const datos = await res.json().catch(() => null);
+
+            if (res.ok && datos && datos.autenticado) {
+                window.location.replace(destino);
+            }
+        } catch (error) {
+            // Sin conexión: se permite intentar el login manualmente.
+        }
+    }
+
+    document.getElementById('formLogin').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const boton = document.getElementById('btnIngresar');
+        const usuario = document.getElementById('usuario').value.trim();
+        const clave = document.getElementById('clave').value;
+
+        ocultarError();
+
+        if (usuario === '' || clave === '') {
+            mostrarError('Escribe tu usuario y tu clave.');
+            return;
+        }
+
+        boton.disabled = true;
+        boton.textContent = 'Verificando...';
+
+        try {
+            const res = await fetch('api_sesion.php?accion=login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ usuario, clave })
+            });
+
+            const datos = await res.json().catch(() => null);
+
+            if (!datos) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !datos.exito) {
+                throw new Error(datos.mensaje || 'No se pudo iniciar sesión.');
+            }
+
+            window.location.replace(destino);
+        } catch (error) {
+            mostrarError(error.message);
+            document.getElementById('clave').select();
+        } finally {
+            boton.disabled = false;
+            boton.textContent = 'Ingresar al sistema';
+        }
+    });
+
+    verificarSesionActiva();
+</script>
+
+</body>
+</html>

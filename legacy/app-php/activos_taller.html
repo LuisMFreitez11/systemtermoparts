@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9D%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="estilos_cabecera.css">
+    <title>Termo Parts FW - Activos de taller</title>
+    <script src="auth.js" defer></script>
+    <script src="movil.js?v=1" defer></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #0284c7;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --info: #0f766e;
+            --bg: #f8fafc;
+            --text: #334155;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1600px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { color: var(--primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        button, .btn { padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-info { background: var(--info); color: white; }
+        .btn-taller { background: #7c3aed; color: white; }
+        .btn-entradas { background: #6d28d9; color: white; }
+        .btn-danados { background: #991b1b; color: white; }
+        .btn-light { background: #e2e8f0; color: var(--text); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 13px; vertical-align: top; }
+        th { background: #f1f5f9; color: var(--primary); white-space: nowrap; }
+        tr:hover td { background: #f8fafc; }
+        .reparacion { min-width: 240px; max-width: 360px; }
+        .celda-materiales { min-width: 280px; max-width: 380px; }
+        .material-linea { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; padding: 3px 0; border-bottom: 1px dashed #e2e8f0; }
+        .material-linea:last-child { border-bottom: none; }
+        .material-linea .codigo { font-weight: 700; color: #0f766e; }
+        .material-linea .nombre { color: #475569; }
+        .material-linea .cantidad { font-weight: 700; color: #0f172a; }
+        .material-linea .stock { font-size: 11px; color: #64748b; }
+        .material-historico { font-size: 11px; color: #64748b; font-style: italic; }
+        .sin-materiales { color: #94a3b8; font-style: italic; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; padding: 15px; z-index: 50; }
+        .modal-content { background: white; padding: 28px; border-radius: 8px; width: 100%; max-width: 980px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); max-height: 94vh; overflow-y: auto; }
+        .modal-content h3 { margin-top: 0; color: var(--primary); }
+        .form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .form-group { margin-bottom: 2px; }
+        .form-group.full { grid-column: 1 / -1; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; }
+        input, select, textarea { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        textarea { resize: vertical; min-height: 70px; }
+        .buscador { display: flex; gap: 12px; align-items: center; margin-bottom: 5px; flex-wrap: wrap; }
+        .buscador input { max-width: 460px; }
+        #contadorActivos { font-size: 14px; color: #64748b; }
+        .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+        .acciones .btn { padding: 5px 10px; font-size: 12px; }
+        .vacio { text-align: center; color: #64748b; }
+        .materiales-panel { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f8fafc; margin-top: 6px; }
+        .materiales-panel h4 { margin: 0 0 10px; color: var(--primary); font-size: 15px; }
+        .material-add { display: grid; grid-template-columns: minmax(0, 1fr) 120px auto; gap: 10px; align-items: end; }
+        .material-buscar { margin-bottom: 12px; }
+        .material-buscar label { margin-bottom: 4px; font-size: 13px; color: #475569; }
+        .material-buscar input { margin-bottom: 0; }
+        .material-buscar-info { display: block; margin-top: 4px; font-size: 12px; color: #64748b; }
+        .material-lista { margin-top: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; max-height: 230px; overflow-y: auto; }
+        .material-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .material-fila:last-child { border-bottom: none; }
+        .material-fila .datos { display: flex; flex-direction: column; gap: 2px; }
+        .material-fila .datos small { color: #64748b; }
+        .material-fila .quitar { background: #fee2e2; color: #991b1b; border: none; padding: 4px 8px; border-radius: 5px; cursor: pointer; font-weight: 700; }
+        .material-vacio { padding: 14px; text-align: center; color: #94a3b8; font-size: 13px; }
+        .stock-mini { font-size: 12px; color: #0f766e; }
+        .aviso { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 6px; padding: 10px 12px; font-size: 13px; margin-top: 10px; }
+        @media (max-width: 900px) {
+            .form-grid { grid-template-columns: 1fr 1fr; }
+            .material-add { grid-template-columns: 1fr; }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+            .reparacion, .celda-materiales { min-width: 0; max-width: none; white-space: normal; }
+        }
+        @media (max-width: 620px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <link rel="stylesheet" href="estilos_movil.css?v=1">
+</head>
+<body>
+
+<div class="container">
+    <header class="cabecera">
+        <div class="fila-titulo">
+            <h2>🛠️ Activos de taller y materiales utilizados</h2>
+            <div class="auth-zona" data-auth></div>
+        </div>
+
+        <nav class="fila-nav" aria-label="Navegación y acciones">
+            <div class="nav-grupo">
+                <a href="index.html" class="btn btn-light">← Volver al Inventario</a>
+                <a href="activos.html" class="btn btn-info">📋 Activos de calle</a>
+                <a href="entradas.html" class="btn btn-entradas">📥 Entradas de almacén</a>
+                <a href="danados.html" class="btn btn-danados">⚠️ Dañados</a>
+                <a href="herramientas.html" class="btn btn-warning">🔧 Herramientas</a>
+            </div>
+
+            <div class="nav-grupo nav-acciones">
+                <button class="btn btn-primary" onclick="abrirModal()">+ Nuevo Activo</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="buscador">
+        <input type="search" id="buscarActivo" placeholder="🔍 Buscar por activo, cliente, modelo, orden, reporte o material..." autocomplete="off">
+        <span id="contadorActivos"></span>
+    </div>
+
+    <table id="tablaActivos">
+        <thead>
+            <tr>
+                <th>FECHA RUTA</th>
+                <th>ACTIVO</th>
+                <th>MODELO</th>
+                <th>Nro. orden</th>
+                <th>N° REPORTE TERMO PARTS</th>
+                <th>Nombre del Cliente</th>
+                <th>REPARACIÓN</th>
+                <th>MATERIALES UTILIZADOS</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="9" class="vacio">Cargando activos...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal CRUD Activo -->
+<div class="modal" id="modalActivo">
+    <div class="modal-content">
+        <h3 id="modalTitulo">Registrar Nuevo Activo</h3>
+        <form id="formActivo">
+            <input type="hidden" id="activo_id" name="activo_id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Fecha ruta:</label>
+                    <input type="date" id="fecha_ruta" name="fecha_ruta">
+                </div>
+                <div class="form-group">
+                    <label>Activo:</label>
+                    <input type="text" id="activo" name="activo" maxlength="50" required placeholder="Ej: C221698">
+                </div>
+                <div class="form-group">
+                    <label>Modelo:</label>
+                    <input type="text" id="modelo" name="modelo" maxlength="120" placeholder="Ej: CRH-19 R290 ENF-1T">
+                </div>
+                <div class="form-group">
+                    <label>Nro. orden:</label>
+                    <input type="text" id="nro_orden" name="nro_orden" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>N° Reporte Termo Parts:</label>
+                    <input type="text" id="numero_reporte" name="numero_reporte" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>Nombre del cliente:</label>
+                    <input type="text" id="nombre_cliente" name="nombre_cliente" maxlength="255">
+                </div>
+                <div class="form-group full">
+                    <label>Reparación:</label>
+                    <textarea id="reparacion" name="reparacion" maxlength="5000" placeholder="Detalle del trabajo realizado..."></textarea>
+                </div>
+            </div>
+
+            <div class="materiales-panel">
+                <h4>Materiales del almacén utilizados</h4>
+                <div class="form-group material-buscar">
+                    <label for="buscarMaterial">Buscar material por código o descripción</label>
+                    <input type="search" id="buscarMaterial" placeholder="🔍 Escribe el código del material (ej: 12033002) o parte de la descripción..." autocomplete="off">
+                    <small class="material-buscar-info" id="materialBuscarInfo"></small>
+                </div>
+                <div class="material-add">
+                    <div class="form-group">
+                        <label for="materialProducto">Material (código — descripción)</label>
+                        <select id="materialProducto">
+                            <option value="">Selecciona un material del almacén...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="materialCantidad">Cantidad</label>
+                        <input type="number" id="materialCantidad" min="0.001" step="0.001" value="1">
+                    </div>
+                    <button type="button" class="btn btn-info" onclick="agregarMaterial()">+ Agregar</button>
+                </div>
+                <div class="aviso">Al guardar, los materiales nuevos se descuentan del stock del almacén y quedan registrados en el historial del producto.</div>
+                <div class="material-lista" id="materialesSeleccionados"></div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-light" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" class="btn btn-success">Guardar activo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let activosCache = [];
+    let productosCache = [];
+    let materialesSeleccionados = [];
+    const TIPO_ACTIVO = 'TALLER';
+
+    const formatoCantidad = new Intl.NumberFormat('es-VE', { maximumFractionDigits: 3 });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarActivos();
+        cargarProductos();
+
+        document.getElementById('buscarActivo').addEventListener('input', aplicarFiltro);
+
+        document.getElementById('buscarMaterial').addEventListener('input', filtrarMateriales);
+        document.getElementById('buscarMaterial').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+
+        document.getElementById('modalActivo').addEventListener('click', function (e) {
+            if (e.target === this) {
+                cerrarModal();
+            }
+        });
+    });
+
+    function escaparHtml(valor) {
+        return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[caracter]);
+    }
+
+    function formatearCantidad(valor) {
+        const numero = Number(valor);
+        return Number.isFinite(numero) ? escaparHtml(formatoCantidad.format(numero)) : escaparHtml(valor);
+    }
+
+    function formatearFecha(valor) {
+        const texto = String(valor ?? '').trim();
+        if (texto === '') {
+            return '—';
+        }
+
+        const [fecha] = texto.split(' ');
+        const [anio, mes, dia] = fecha.split('-');
+
+        return dia && mes && anio ? `${dia}/${mes}/${anio}` : escaparHtml(texto);
+    }
+
+    async function cargarActivos() {
+        const tbody = document.querySelector('#tablaActivos tbody');
+        tbody.innerHTML = '<tr><td colspan="9" class="vacio">Cargando activos...</td></tr>';
+
+        try {
+            const res = await fetch('api_activos.php?accion=listar&tipo=' + encodeURIComponent(TIPO_ACTIVO), {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            const activos = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                throw new Error(activos?.mensaje || 'El servidor respondió con estado ' + res.status);
+            }
+
+            if (!Array.isArray(activos)) {
+                throw new Error(activos?.mensaje || 'Respuesta inválida del servidor.');
+            }
+
+            activosCache = activos;
+            aplicarFiltro();
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="9" class="vacio" style="color:#dc2626;">Error al cargar los activos: ${escaparHtml(error.message)}</td></tr>`;
+        }
+    }
+
+    async function cargarProductos() {
+        const select = document.getElementById('materialProducto');
+
+        try {
+            const res = await fetch('api.php?accion=listar', {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            const productos = await res.json().catch(() => null);
+
+            if (!res.ok || !Array.isArray(productos)) {
+                throw new Error(productos?.mensaje || 'No se pudieron cargar los materiales.');
+            }
+
+            productosCache = productos;
+            llenarMateriales('');
+        } catch (error) {
+            select.innerHTML = '<option value="">Error al cargar materiales</option>';
+
+            const info = document.getElementById('materialBuscarInfo');
+            if (info) {
+                info.textContent = '';
+            }
+        }
+    }
+
+    function llenarMateriales(filtro) {
+        const select = document.getElementById('materialProducto');
+        const info = document.getElementById('materialBuscarInfo');
+        const termino = String(filtro ?? '').trim().toLowerCase();
+        const anterior = select.value;
+
+        const normalizar = valor => String(valor ?? '').toLowerCase();
+
+        const coincidencias = [...productosCache]
+            .filter(p => termino === ''
+                || normalizar(p.sku_codigo).includes(termino)
+                || normalizar(p.nombre_descripcion).includes(termino))
+            .sort((a, b) => String(a.sku_codigo ?? '').localeCompare(String(b.sku_codigo ?? ''), 'es', { numeric: true }));
+
+        if (coincidencias.length === 0) {
+            select.innerHTML = '<option value="">Sin coincidencias</option>';
+
+            if (info) {
+                info.textContent = 'No se encontraron materiales con "' + String(filtro ?? '').trim() + '". Revisa el código o borra la búsqueda.';
+            }
+
+            return;
+        }
+
+        const etiquetaInicial = termino === ''
+            ? 'Selecciona un material del almacén...'
+            : coincidencias.length + (coincidencias.length === 1 ? ' coincidencia' : ' coincidencias') + ' — elige el material...';
+
+        select.innerHTML = '<option value="">' + etiquetaInicial + '</option>' + coincidencias.map(p => {
+            const lote = p.lote_condicion && p.lote_condicion !== 'STOCK' ? ` · ${p.lote_condicion}` : '';
+            const stock = formatearCantidad(p.stock_actual);
+            return `<option value="${escaparHtml(p.producto_id)}">${escaparHtml(p.sku_codigo)} — ${escaparHtml(p.nombre_descripcion)}${escaparHtml(lote)} (stock: ${stock} ${escaparHtml(p.unidad_medida)})</option>`;
+        }).join('');
+
+        if (coincidencias.some(p => String(p.producto_id) === String(anterior))) {
+            select.value = anterior;
+        }
+
+        if (info) {
+            info.textContent = termino === ''
+                ? coincidencias.length + ' materiales disponibles en el almacén.'
+                : coincidencias.length + (coincidencias.length === 1 ? ' material encontrado.' : ' materiales encontrados.');
+        }
+    }
+
+    function filtrarMateriales() {
+        llenarMateriales(document.getElementById('buscarMaterial').value);
+    }
+
+    function aplicarFiltro() {
+        const termino = document.getElementById('buscarActivo').value.trim().toLowerCase();
+        const contador = document.getElementById('contadorActivos');
+
+        if (termino === '') {
+            contador.textContent = `${activosCache.length} activo${activosCache.length === 1 ? '' : 's'}`;
+            renderizarActivos(activosCache);
+            return;
+        }
+
+        const filtrados = activosCache.filter(a => {
+            const materiales = (a.materiales || []).map(m => `${m.sku_codigo} ${m.nombre_descripcion}`).join(' ');
+            const texto = `${a.activo} ${a.modelo} ${a.nro_orden} ${a.numero_reporte} ${a.nombre_cliente} ${a.reparacion} ${materiales}`.toLowerCase();
+            return texto.includes(termino);
+        });
+
+        contador.textContent = `${filtrados.length} de ${activosCache.length} activos`;
+        renderizarActivos(filtrados);
+    }
+
+    function renderizarMateriales(materiales) {
+        if (!materiales || materiales.length === 0) {
+            return '<span class="sin-materiales">Sin materiales registrados</span>';
+        }
+
+        return materiales.map(m => {
+            const historico = Number(m.cantidad_descontada) < Number(m.cantidad);
+            const etiqueta = historico ? '<span class="material-historico">(histórico, sin descuento)</span>' : '';
+            const stock = m.stock_actual === undefined || m.stock_actual === null
+                ? ''
+                : `<span class="stock">Stock actual: ${formatearCantidad(m.stock_actual)} ${escaparHtml(m.unidad_medida || '')}</span>`;
+
+            return `<div class="material-linea">
+                <span class="codigo">${escaparHtml(m.sku_codigo)}</span>
+                <span class="nombre">${escaparHtml(m.nombre_descripcion)}</span>
+                <span class="cantidad">× ${formatearCantidad(m.cantidad)} ${escaparHtml(m.unidad_medida || '')}</span>
+                ${stock}
+                ${etiqueta}
+            </div>`;
+        }).join('');
+    }
+
+    function renderizarActivos(activos) {
+        const tbody = document.querySelector('#tablaActivos tbody');
+
+        if (activos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="vacio">No hay activos que coincidan con la búsqueda.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = activos.map(a => `
+            <tr>
+                <td>${formatearFecha(a.fecha_ruta)}</td>
+                <td><strong>${escaparHtml(a.activo)}</strong></td>
+                <td>${escaparHtml(a.modelo || '—')}</td>
+                <td>${escaparHtml(a.nro_orden || '—')}</td>
+                <td>${escaparHtml(a.numero_reporte || '—')}</td>
+                <td>${escaparHtml(a.nombre_cliente || '—')}</td>
+                <td class="reparacion">${escaparHtml(a.reparacion || '—')}</td>
+                <td class="celda-materiales">${renderizarMateriales(a.materiales)}</td>
+                <td>
+                    <div class="acciones">
+                        <button class="btn btn-primary" onclick="editarActivo(${Number(a.activo_id)})">Editar</button>
+                        <button class="btn btn-danger" onclick="eliminarActivo(${Number(a.activo_id)})">Eliminar</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function abrirModal() {
+        document.getElementById('formActivo').reset();
+        document.getElementById('activo_id').value = '';
+        document.getElementById('fecha_ruta').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('materialCantidad').value = 1;
+        document.getElementById('buscarMaterial').value = '';
+        llenarMateriales('');
+        document.getElementById('modalTitulo').innerText = 'Registrar Nuevo Activo';
+        materialesSeleccionados = [];
+        renderizarMaterialesSeleccionados();
+        document.getElementById('modalActivo').style.display = 'flex';
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalActivo').style.display = 'none';
+    }
+
+    function editarActivo(id) {
+        const a = activosCache.find(item => Number(item.activo_id) === Number(id));
+
+        if (!a) {
+            alert('No se encontró el activo seleccionado. Recarga la página e inténtalo de nuevo.');
+            return;
+        }
+
+        document.getElementById('modalTitulo').innerText = 'Editar Activo: ' + a.activo;
+        document.getElementById('activo_id').value = a.activo_id;
+        document.getElementById('fecha_ruta').value = a.fecha_ruta || '';
+        document.getElementById('activo').value = a.activo;
+        document.getElementById('modelo').value = a.modelo || '';
+        document.getElementById('nro_orden').value = a.nro_orden || '';
+        document.getElementById('numero_reporte').value = a.numero_reporte || '';
+        document.getElementById('nombre_cliente').value = a.nombre_cliente || '';
+        document.getElementById('reparacion').value = a.reparacion || '';
+
+        document.getElementById('buscarMaterial').value = '';
+        llenarMateriales('');
+
+        materialesSeleccionados = (a.materiales || []).map(m => ({
+            producto_id: Number(m.producto_id),
+            sku_codigo: m.sku_codigo,
+            nombre_descripcion: m.nombre_descripcion,
+            unidad_medida: m.unidad_medida,
+            cantidad: Number(m.cantidad),
+            cantidad_descontada: Number(m.cantidad_descontada),
+            stock_actual: m.stock_actual ?? stockProducto(Number(m.producto_id))
+        }));
+
+        renderizarMaterialesSeleccionados();
+        document.getElementById('modalActivo').style.display = 'flex';
+    }
+
+    function stockProducto(productoId) {
+        const p = productosCache.find(item => Number(item.producto_id) === Number(productoId));
+        return p ? Number(p.stock_actual) : null;
+    }
+
+    function agregarMaterial() {
+        const select = document.getElementById('materialProducto');
+        const productoId = Number(select.value);
+        const cantidad = Number(document.getElementById('materialCantidad').value);
+
+        if (!productoId) {
+            alert('Selecciona un material del almacén.');
+            return;
+        }
+
+        if (!Number.isFinite(cantidad) || cantidad < 0.001) {
+            alert('La cantidad debe ser mayor o igual a 0,001.');
+            return;
+        }
+
+        const producto = productosCache.find(p => Number(p.producto_id) === productoId);
+        if (!producto) {
+            alert('No se encontró el material seleccionado.');
+            return;
+        }
+
+        const existente = materialesSeleccionados.find(m => m.producto_id === productoId);
+
+        if (existente) {
+            existente.cantidad = Math.round((existente.cantidad + cantidad) * 1000) / 1000;
+        } else {
+            materialesSeleccionados.push({
+                producto_id: productoId,
+                sku_codigo: producto.sku_codigo,
+                nombre_descripcion: producto.nombre_descripcion,
+                unidad_medida: producto.unidad_medida,
+                cantidad: Math.round(cantidad * 1000) / 1000,
+                cantidad_descontada: 0,
+                stock_actual: Number(producto.stock_actual)
+            });
+        }
+
+        select.value = '';
+        document.getElementById('materialCantidad').value = 1;
+        renderizarMaterialesSeleccionados();
+    }
+
+    function quitarMaterial(indice) {
+        materialesSeleccionados.splice(indice, 1);
+        renderizarMaterialesSeleccionados();
+    }
+
+    function renderizarMaterialesSeleccionados() {
+        const contenedor = document.getElementById('materialesSeleccionados');
+
+        if (materialesSeleccionados.length === 0) {
+            contenedor.innerHTML = '<div class="material-vacio">Todavía no has agregado materiales a este activo.</div>';
+            return;
+        }
+
+        contenedor.innerHTML = materialesSeleccionados.map((m, indice) => {
+            const stock = m.stock_actual === null || m.stock_actual === undefined ? '' : `<span class="stock-mini">Stock actual: ${formatearCantidad(m.stock_actual)}</span>`;
+
+            return `<div class="material-fila">
+                <div class="datos">
+                    <span><strong>${escaparHtml(m.sku_codigo)}</strong> — ${escaparHtml(m.nombre_descripcion)}</span>
+                    <small>Cantidad: ${formatearCantidad(m.cantidad)} ${escaparHtml(m.unidad_medida || '')} ${stock}</small>
+                </div>
+                <button type="button" class="quitar" onclick="quitarMaterial(${indice})">Quitar</button>
+            </div>`;
+        }).join('');
+    }
+
+    document.getElementById('formActivo').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const id = document.getElementById('activo_id').value;
+        const accion = id ? 'actualizar' : 'crear';
+        const data = Object.fromEntries(new FormData(this).entries());
+
+        ['activo', 'modelo', 'nro_orden', 'numero_reporte', 'nombre_cliente', 'reparacion'].forEach(campo => {
+            if (typeof data[campo] === 'string') {
+                data[campo] = data[campo].trim();
+            }
+        });
+
+        data.materiales = materialesSeleccionados.map(m => ({
+            producto_id: Number(m.producto_id),
+            cantidad: Number(m.cantidad)
+        }));
+        data.tipo = TIPO_ACTIVO;
+
+        submitBtn.disabled = true;
+
+        try {
+            const res = await fetch('api_activos.php?accion=' + accion, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo guardar el activo.');
+            }
+
+            cerrarModal();
+            await cargarActivos();
+            await cargarProductos();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+
+    async function eliminarActivo(id) {
+        const a = activosCache.find(item => Number(item.activo_id) === Number(id));
+        const nombre = a ? `"${a.activo} - ${a.nombre_cliente || a.modelo}"` : 'este activo';
+
+        if (!confirm(`¿Estás seguro de eliminar ${nombre}?\nLos materiales descontados se devolverán al almacén.`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch('api_activos.php?accion=eliminar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activo_id: Number(id) })
+            });
+
+            const r = await res.json().catch(() => null);
+
+            if (!r) {
+                throw new Error('Respuesta inválida del servidor.');
+            }
+
+            if (!res.ok || !r.exito) {
+                throw new Error(r.mensaje || 'No se pudo eliminar el activo.');
+            }
+
+            await cargarActivos();
+            await cargarProductos();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+</script>
+
+</body>
+</html>

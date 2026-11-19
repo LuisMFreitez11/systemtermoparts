@@ -1,9 +1,10 @@
 /**
  * Configuración del backend Node.
  *
- * Prioridad: variables de entorno > server/.env > backend/.env > valores por
- * defecto. Se reutiliza `backend/.env` para no duplicar credenciales: el mismo
- * archivo sirve a PHP y a Node durante la transición.
+ * Prioridad: variables de entorno > server/.env > legacy/backend/.env >
+ * backend/.env (compatibilidad) > valores por defecto. El backend PHP está
+ * archivado en `legacy/backend`, pero se reutiliza su `.env` para no duplicar
+ * credenciales en local.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -42,6 +43,7 @@ function leerEnv(archivo) {
 }
 
 const archivoEnv = {
+    ...leerEnv(path.join(RAIZ_PROYECTO, 'legacy', 'backend', '.env')),
     ...leerEnv(path.join(RAIZ_PROYECTO, 'backend', '.env')),
     ...leerEnv(path.join(RAIZ_PROYECTO, 'server', '.env')),
 };
@@ -144,15 +146,30 @@ const config = {
 if (config.driver !== 'pgsql') {
     throw new Error(
         'Este backend solo implementa el driver "pgsql". ' +
-        'Para MariaDB usa el backend PHP (backend/public) o define DB_DRIVER=pgsql.'
+        'Para MariaDB usa el backend PHP archivado en legacy/backend o define DB_DRIVER=pgsql.'
     );
 }
 
+const esProduccion = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+
 if (config.sesion.secreto === '') {
-    // Se deriva un secreto estable por proceso para desarrollo. En producción
-    // debe definirse SESSION_SECRET: sin él, reiniciar invalida las sesiones.
+    if (esProduccion) {
+        throw new Error(
+            'SESSION_SECRET es obligatorio en producción. ' +
+            'Defínelo en las variables de entorno (Vercel → Settings → Environment Variables).'
+        );
+    }
+
+    // Se deriva un secreto estable por proceso solo para desarrollo.
     config.sesion.secreto = `dev-${config.db.user}-${config.db.database}-${config.db.password}`;
     config.sesion.secretoDerivado = true;
+}
+
+if (esProduccion && config.db.password === '') {
+    throw new Error(
+        'DB_PGSQL_PASSWORD es obligatorio en producción. ' +
+        'Revisa las variables de entorno del proyecto.'
+    );
 }
 
 export { config, RAIZ_PROYECTO };
