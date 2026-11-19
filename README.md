@@ -204,13 +204,14 @@ Convenciones:
 | Conexión Supabase (PostgreSQL 17) | OK |
 | RLS activo en 13 tablas | OK |
 | Login / estado / logout | OK |
-| Productos (`listar`) | 854 |
+| Productos (`listar`) | 859 |
 | Activos CALLE / TALLER | 22 / 0 |
 | Herramientas | 149 |
 | Movimientos de herramientas | 2 |
 | Entradas de almacén | 1 |
-| Materiales dañados | 2 |
-| Historial | 67 |
+| Materiales dañados | 1 |
+| Tomas físicas / detalle | 2 / 1.708 |
+| Historial | 100 |
 | Exportar PDF | 200, `text/html` |
 | Exportar Excel | 200, `application/vnd.openxmlformats...` |
 | Pruebas unitarias + HTTP (Node) | 60/60 |

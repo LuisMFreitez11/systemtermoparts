@@ -1,5 +1,10 @@
 # Migración del WMS a Supabase (PostgreSQL)
 
+> **Documento histórico (17/11/2026).** Describe la primera migración con el
+> backend PHP plano. Hoy el backend activo es Node y la vía vigente para cargar
+> volcados de MariaDB es [`tools/importar_dump_mariadb.mjs`](../tools/importar_dump_mariadb.mjs);
+> ver [`IMPORTAR_DATOS.md`](IMPORTAR_DATOS.md).
+
 Fecha de migración: 17/11/2026 (hora de Venezuela).
 
 La aplicación quedó configurada para trabajar contra Supabase. MariaDB se conserva

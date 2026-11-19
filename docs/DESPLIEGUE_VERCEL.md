@@ -68,7 +68,7 @@ conexión por instancia.
 
 1. `https://TU-APP/health.php` → `{"exito":true,...}`.
 2. Login real desde `https://TU-APP/login.html`.
-3. Inventario con los 854 productos.
+3. Inventario con los 859 productos.
 4. `/exportar_excel.php` descarga un `.xlsx` y `/exportar_pdf.php` abre el HTML.
 5. Dos clics seguidos en un botón → **una sola** fila en el historial.
 
@@ -184,7 +184,7 @@ rama conectada).
    - `Manifest` sin errores.
    - `Service Workers` con `sw.js` activo (requiere HTTPS).
    - `IndexedDB → termopart-wms` creado.
-4. Inventario muestra los 854 productos.
+4. Inventario muestra los 859 productos.
 5. DevTools → Network → **Offline**:
    - Recargar: la app abre (app shell).
    - Navegar entre páginas: funciona con datos cacheados.
