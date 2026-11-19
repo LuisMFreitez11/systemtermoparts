@@ -1,18 +1,19 @@
 # Backend Node.js + Express (`server/`)
 
 Segundo backend del WMS, con **el mismo contrato JSON y las mismas rutas** que
-el backend PHP (`backend/public`). El frontend no distingue cuál responde: en
-local se puede usar cualquiera de los dos y en Vercel corre este.
+el backend PHP archivado (`legacy/backend/public`). El frontend no distingue
+cuál responde: en local se puede usar cualquiera de los dos y en Vercel corre
+este.
 
-| | PHP (`backend/`) | Node (`server/`) |
+| | PHP (`legacy/backend/`) | Node (`server/`) |
 |---|---|---|
 | Motor de base | PostgreSQL **y** MariaDB | Solo PostgreSQL/Supabase |
 | Sesión | Archivos de PHP | Cookie firmada (HMAC) |
 | Despliegue | Hosting con PHP | Vercel Serverless |
-| Estado | Referencia | Paridad verificada |
+| Estado | Archivado | Backend activo |
 
-> El backend PHP **no se elimina**: sigue siendo el respaldo para MariaDB y la
-> referencia de comportamiento.
+> El backend PHP **no se elimina**: sigue en `legacy/backend` como respaldo para
+> MariaDB y referencia de comportamiento, pero **no se despliega**.
 
 ---
 
@@ -25,7 +26,7 @@ server/
 ├─ src/
 │  ├─ app.js             # Express: CORS, cuerpo crudo, montaje de routers
 │  ├─ server.js          # arranque local (node src/server.js)
-│  ├─ config.js          # env > server/.env > backend/.env > defaults
+│  ├─ config.js          # env > server/.env > legacy/backend/.env > defaults
 │  ├─ db.js              # pool pg, zona horaria, transacciones, db inyectable
 │  ├─ http.js            # helpers con paridad PHP (entero, numero, cantidad…)
 │  ├─ auth.js            # login bcrypt + cookie HMAC, roles
@@ -63,8 +64,12 @@ pnpm dev
 ```
 
 Configuración: copia `server/.env.example` como `server/.env` o reutiliza
-`backend/.env`. La prioridad es
-`variables de entorno > server/.env > backend/.env > valores por defecto`.
+`legacy/backend/.env`. La prioridad es
+`variables de entorno > server/.env > legacy/backend/.env > valores por defecto`.
+
+`pnpm start` sirve también `frontend/` en el mismo origen, así que
+<http://localhost:3000> abre la app completa. `pnpm dev` añade recarga
+automática.
 
 Comprobación rápida:
 
@@ -148,8 +153,9 @@ exige que 2 y 15 materiales usen **el mismo número** (≤ 3).
 ## 6. Pruebas
 
 ```powershell
-# 51 pruebas rápidas: helpers, validadores, rutas, errores, CORS,
-# cookies, JSON inválido, 401/400/405/404/409 e idempotencia concurrente.
+# 56 pruebas rápidas: helpers, validadores, rutas, errores, CORS,
+# cookies, JSON inválido, 401/400/405/404/409, idempotencia concurrente
+# y la guardia anti doble clic del cliente.
 pnpm test
 
 # Añade paridad e integración (escriben en Supabase; se limpian solas).
@@ -164,9 +170,9 @@ pnpm test:all
 | `test/parity` | Diff Node vs PHP con el mismo login y datos | Solo lectura |
 | `test/integration` | Ciclo CRUD completo + conteo anti-N+1 | Sí (se limpia) |
 
-Las suites con `RUN_INTEGRATION=1` requieren `backend/.env` (o `server/.env`) y,
-para paridad, PHP CLI en `C:\xampp\php\php.exe` (o `PHP_BIN`). No se ejecutan en
-CI sin secretos: quedan `skip` por defecto.
+Las suites con `RUN_INTEGRATION=1` requieren `legacy/backend/.env` (o
+`server/.env`) y, para paridad, PHP CLI en `C:\xampp\php\php.exe` (o `PHP_BIN`).
+No se ejecutan en CI sin secretos: quedan `skip` por defecto.
 
 Limpieza de las suites de escritura: prefijos `ZZTEST…` / `zztest-…` y borrado
 del historial por encima del `MAX(historial_id)` tomado **antes** del login.
@@ -195,7 +201,8 @@ del historial por encima del `MAX(historial_id)` tomado **antes** del login.
 > agotar el límite del proyecto. Ambos puertos se probaron con este backend.
 4. Deploy. `vercel.json` reescribe `/api.php`, `/api_activos.php`, … a
    `/api/productos`, `/api/activos`, … y da 30 s de `maxDuration` a las
-   funciones.
+   funciones. La región es `yul1` (Montreal), junto a Supabase `ca-central-1`.
+   `.vercelignore` deja fuera `legacy/`, `docs/`, `database/` y las pruebas.
 5. Comprueba:
    - `https://TU-APP/health.php`
    - login real
@@ -217,6 +224,6 @@ Si el frontend y la API comparten dominio (caso Vercel), `config.js` deja
 - Contraseñas con `bcryptjs` (compatible con los hashes `$2y$` de PHP).
 - Consultas preparadas en todas las operaciones; nunca se interpola entrada.
 - RLS de Supabase se mantiene activo: el backend conecta con el rol propietario,
-  igual que PHP (ver `backend/database/rls_supabase.sql`).
+  igual que PHP (ver `legacy/backend/database/rls_supabase.sql`).
 - Credenciales solo por entorno; `server/.env` está en `.gitignore`.
 - El backend Node **no** implementa MariaDB. Para ese motor, usa PHP.

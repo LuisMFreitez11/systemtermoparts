@@ -5,39 +5,44 @@
 | Componente | Dónde se despliega | Notas |
 |---|---|---|
 | Frontend (HTML/CSS/JS/PWA) | **Vercel** | Estático. `vercel.json` sirve `frontend/`. |
-| Backend Node + Express | **Vercel** (funciones de `api/`) | Mismas rutas y JSON. Recomendado. |
-| Backend PHP + sesiones | Hosting PHP con HTTPS | Alternativa con MariaDB. |
+| Backend Node + Express | **Vercel** (funciones de `api/`) | Backend activo. Mismas rutas y JSON. |
+| Backend PHP + sesiones | Hosting PHP con HTTPS | **Archivado** en `legacy/backend`. Solo si se vuelve a PHP/MariaDB. |
 
 Hay dos caminos válidos:
 
-- **A. Todo en Vercel (recomendado):** frontend estático + backend Node
+- **A. Todo en Vercel (el actual):** frontend estático + backend Node
   serverless. No hace falta otro hosting y el frontend queda en el mismo
   dominio (`apiBase = ''`).
-- **B. Frontend en Vercel + backend PHP:** obligatorio si la base es MariaDB.
-  Ver el Paso 2.
+- **B. Frontend en Vercel + backend PHP archivado:** solo si algún día se
+  retoma PHP o se necesita MariaDB. Ver el Paso 2.
 
 ---
 
 ## Opción A — Backend Node en Vercel
 
-`vercel.json` ya incluye los `rewrites` (`/api.php` → `/api/productos`, …) y las
-funciones de `api/` importan `server/src/app.js`. No hay build: el
-`outputDirectory` es `frontend`.
+`vercel.json` ya incluye los `rewrites` (`/api.php` → `/api/productos`, …), la
+región `yul1`, `maxDuration: 30`, y las funciones de `api/` importan
+`server/src/app.js`. No hay build: el `outputDirectory` es `frontend` y
+`.vercelignore` excluye `legacy/`, `docs/`, `database/` y las pruebas.
 
 ### Paso 1 — Importar el repositorio
 
-1. En Vercel: **Add New → Project → Import** del repositorio.
+1. En Vercel: **Add New → Project → Import** del repositorio
+   `https://github.com/LuisMFreitez11/systemtermoparts.git`.
 2. Framework Preset: **Other**.
-3. Build Command: *(vacío)*.
+3. Build Command: *(vacío; Vercel instala con pnpm)*.
 4. Output Directory: `frontend`.
 5. Antes de desplegar, define las variables del Paso 2.
+
+Si el proyecto ya está conectado al repositorio, **cada push a `main`
+redespliega**: no hace falta subir nada a mano.
 
 ### Paso 2 — Variables de entorno
 
 | Variable | Valor |
 |---|---|
 | `DB_DRIVER` | `pgsql` |
-| `DB_PGSQL_DSN` | `pgsql:host=...pooler.supabase.com;port=5432;dbname=postgres;sslmode=require` |
+| `DB_PGSQL_DSN` | `pgsql:host=...pooler.supabase.com;port=6543;dbname=postgres;sslmode=require` |
 | `DB_PGSQL_USER` | `postgres.TU-PROYECTO` |
 | `DB_PGSQL_PASSWORD` | tu clave |
 | `SESSION_SECRET` | cadena larga y aleatoria (**obligatoria**) |
@@ -48,8 +53,8 @@ funciones de `api/` importan `server/src/app.js`. No hay build: el
 | `IDEMPOTENCY_WAIT` | `5` |
 | `DB_POOL_MAX` | `3` |
 
-Sin `SESSION_SECRET`, cada instancia firma las cookies con una clave distinta y
-las sesiones se pierden de forma intermitente.
+Sin `SESSION_SECRET`, el backend falla al arrancar en producción. En local se
+deriva uno de desarrollo, por eso el error no aparece hasta desplegar.
 
 En Vercel usa preferentemente el pooler de Supabase en el puerto **6543**
 (transacción) en `DB_PGSQL_DSN`; el puerto `5432` es modo sesión y consume una
@@ -67,11 +72,13 @@ Detalles técnicos y pruebas: [`BACKEND_NODE.md`](BACKEND_NODE.md).
 
 ---
 
-## Opción B — Backend PHP
+## Opción B — Backend PHP archivado
+
+El backend PHP ya **no forma parte del despliegue**: vive en `legacy/backend` y
+`.vercelignore` lo excluye. Vercel no ejecuta PHP. Esta opción solo tiene sentido
+si se decide volver a ese motor (por ejemplo, para usar MariaDB).
 
 ### Paso 1 — Publicar el frontend en Vercel
-
-### Opción A: desde la web
 
 1. Sube el repositorio a GitHub/GitLab.
 2. En Vercel: **Add New → Project → Import**.
@@ -83,7 +90,7 @@ Detalles técnicos y pruebas: [`BACKEND_NODE.md`](BACKEND_NODE.md).
 `vercel.json` ya declara `"outputDirectory": "frontend"` y las cabeceras de
 `sw.js` y `manifest.json`.
 
-### Opción B: con la CLI
+También se puede desde la CLI:
 
 ```powershell
 pnpm dlx vercel --prod
@@ -93,11 +100,9 @@ vercel --prod
 
 > Si se instala tooling, el proyecto usa **pnpm**, no npm.
 
-URL de ejemplo: `https://termo-part-wms.vercel.app`.
-
 ---
 
-## Paso 2 — Publicar el backend PHP
+### Paso 2 — Publicar el backend PHP (solo si se retoma)
 
 Requisitos del hosting:
 
@@ -108,14 +113,14 @@ Requisitos del hosting:
 
 Opciones habituales:
 
-- **cPanel / hosting compartido:** sube el proyecto completo y apunta el dominio
-  o subdominio a la carpeta del proyecto.
-- **Railway / Render / VPS:** contenedor PHP-Apache con el repositorio montado.
+- **cPanel / hosting compartido:** sube el contenido de `legacy/backend` y apunta
+  el dominio o subdominio a su carpeta `public/`.
+- **Railway / Render / VPS:** contenedor PHP-Apache con `legacy/backend` montado.
 - **Túnel para una demo:** `cloudflared tunnel --url http://localhost` o
-  `ngrok http 80` sobre el XAMPP local. Sirve para probar desde Vercel, pero no
-  para producción.
+  `ngrok http 80` sobre el XAMPP local. Sirve para probar, pero no para
+  producción.
 
-Configura `backend/.env` **en el servidor**:
+Configura `legacy/backend/.env` **en el servidor**:
 
 ```env
 APP_DEBUG=0
@@ -125,55 +130,49 @@ DB_PGSQL_USER=postgres.TU-PROYECTO
 DB_PGSQL_PASSWORD=TU-CLAVE
 SESSION_SAMESITE=None
 SESSION_SECURE=1
-CORS_ALLOWED_ORIGINS=https://termo-part-wms.vercel.app
-FRONTEND_URL=https://termo-part-wms.vercel.app
+CORS_ALLOWED_ORIGINS=https://TU-FRONTEND.vercel.app
+FRONTEND_URL=https://TU-FRONTEND.vercel.app
 IDEMPOTENCY_ENABLED=1
 ```
 
 Aplica las migraciones en el servidor:
 
 ```bash
-php backend/scripts/migrate.php todo
-php backend/scripts/verificar.php
+php legacy/backend/scripts/migrate.php todo
+php legacy/backend/scripts/verificar.php
 ```
 
 Comprueba:
 
 ```
-https://TU-BACKEND/backend/public/health.php
+https://TU-BACKEND/health.php
 ```
 
 Debe responder `{"exito":true,"servicio":"wms-termo-part",...}`.
 
 ---
 
-## Paso 3 — Conectar el frontend con la API
+### Paso 3 — Conectar el frontend con la API
 
-Edita `frontend/js/config.js` y define la URL pública del backend:
+Por defecto el frontend usa **el mismo origen** (`apiBase = ''`), que es lo que
+necesita la Opción A. No hay que editar nada.
 
-```js
-// Producción
-base = 'https://TU-BACKEND.com/backend/public';
-```
-
-O, sin tocar el archivo, agrega antes de `config.js` en cada HTML:
+Solo si la API está en otro dominio, define `window.WMS_API_BASE` antes de
+`frontend/js/config.js` en cada HTML (o con la metaetiqueta `wms-api-base`):
 
 ```html
-<script>window.WMS_API_BASE = 'https://TU-BACKEND.com/backend/public';</script>
+<script>window.WMS_API_BASE = 'https://TU-BACKEND.com';</script>
 ```
 
-La detección automática funciona así:
-
-- `localhost`, `127.0.0.1`, `10.x`, `192.168.x`, `172.16-31.x` → usa
-  `../backend/public` (XAMPP).
-- Cualquier otro dominio → usa `window.WMS_API_BASE` (o `''` si no se define).
+Con dominios distintos, el backend debe permitir el origen del frontend en
+`CORS_ALLOWED_ORIGINS` y usar `SESSION_SAMESITE=None` + `SESSION_SECURE=1`.
 
 Al cambiar `config.js`, sube un nuevo deployment (`vercel --prod` o push a la
 rama conectada).
 
 ---
 
-## Paso 4 — Verificación en producción
+## Verificación en producción
 
 1. `https://TU-FRONTEND.vercel.app/login.html` carga el logo y el formulario.
 2. Login con un usuario válido.
@@ -195,20 +194,22 @@ rama conectada).
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
-| Login responde 401 correcto pero no “entra” | Cookie bloqueada entre sitios | `SESSION_SAMESITE=None`, `SESSION_SECURE=1` y backend en HTTPS |
+| Login responde 200 pero no “entra” | `SESSION_SECRET` ausente o cookie bloqueada | Definir `SESSION_SECRET`; con dominios distintos `SESSION_SAMESITE=None` y `SESSION_SECURE=1` |
 | `CORS` bloqueado | Origen no autorizado | Agregar el dominio de Vercel a `CORS_ALLOWED_ORIGINS` |
 | Service worker no registra | Se accedió por HTTP o IP LAN | Usar HTTPS o `localhost` |
-| `health.php` 500 | Credenciales o `pdo_pgsql` | Revisar `backend/.env` y `php -m` |
+| `health.php` 500 | Credenciales o conexión a Supabase | Revisar `DB_PGSQL_*` y `SESSION_SECRET` en Vercel; ver log de la función |
+| `FUNCTION_INVOCATION_TIMEOUT` | `maxDuration` o espera de idempotencia | `IDEMPOTENCY_WAIT=5`, `DB_POOL_MAX=3`, puerto 6543 |
 | Datos viejos tras sincronizar | Caché de la pestaña | La app limpia IndexedDB y recarga; si no, recarga manual |
-| 403 al abrir `config/` | Protección `.htaccess` | Es el comportamiento esperado |
+| `health.php` 404 | Rewrite mal aplicado | Revisar `vercel.json` y que `api/health.js` exista |
 
 ---
 
 ## Nota importante sobre Vercel
 
-Con la **Opción A**, Vercel aloja el frontend y el backend Node en el mismo
-proyecto: las funciones de `api/` mantienen las rutas PHP mediante `rewrites`,
-así que `config.js` deja `apiBase = ''` y no hay CORS entre sitios.
+Con la **Opción A** (la actual), Vercel aloja el frontend y el backend Node en el
+mismo proyecto: las funciones de `api/` mantienen las rutas PHP mediante
+`rewrites`, así que `config.js` deja `apiBase = ''` y no hay CORS entre sitios.
+El PHP archivado en `legacy/backend` no se publica.
 
 Con la **Opción B**, Vercel solo aloja el frontend estático y la PWA: no ejecuta
 PHP ni mantiene sesiones PHP. Para un despliegue totalmente funcional se

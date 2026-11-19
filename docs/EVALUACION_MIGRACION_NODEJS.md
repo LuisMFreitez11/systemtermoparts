@@ -2,14 +2,19 @@
 
 **Fecha:** 2026-11-18
 **Alcance:** backend de `TERMOPARTALMACEN` (WMS Termo Parts FW)
-**Estado:** evaluación técnica con medición del código real; no se ha modificado nada.
+**Estado:** migración ejecutada. El backend Node (`server/`) es el activo y el
+PHP quedó archivado en `legacy/backend` (no se despliega).
+
+> **Nota de rutas:** en este documento `backend/` se refiere al backend PHP
+> original; hoy vive en `legacy/backend/`. El backend activo es `server/` y las
+> funciones serverless están en `api/`.
 
 ---
 
 ## 1. Veredicto
 
 **Viable y recomendable, con una condición: conviene hacerlo como segundo backend
-en paralelo (`server/`), no reescribiendo `backend/` de golpe.**
+en paralelo (`server/`), no reescribiendo el PHP de golpe.**
 
 El código es pequeño y muy regular: 2.644 líneas PHP, 6 entidades, 16 acciones de
 escritura y cero dependencias de Composer. No hay ORM, ni framework, ni magia:
@@ -231,7 +236,8 @@ Se puede cortar en la fase 4 y ya tener el 80 % del valor.
 ## 9. Recomendación
 
 1. **Sí a Node + Express**, como `server/` independiente.
-2. **No borrar `backend/`** hasta cumplir el criterio de aceptación.
+2. **No borrar el PHP**: se conservó completo en `legacy/backend` y
+   `legacy/app-php`, fuera del despliegue.
 3. **Sí a corregir N+1 e idempotencia atómica** en la conversión; son los dos
    defectos reales que hoy existen, y se arreglan mejor de cero que parchando PHP.
 4. **Sí a Vercel serverless** para el backend: elimina CORS, cookies cross-site y

@@ -4,13 +4,14 @@ Sistema de gestión de almacén (WMS) para **Termo Parts FW, C.A.** Inventario d
 repuestos, activos de calle y taller, herramientas, entradas de almacén,
 materiales dañados, tomas físicas, auditoría y reportes.
 
-El proyecto está separado en **backend** (PHP + PostgreSQL/Supabase, con respaldo
-MariaDB) y **frontend** (HTML/CSS/JS sin build tools), y funciona como **PWA
-offline-first** pensada para internet lento o inestable y cortes de luz.
+El proyecto usa **Node.js + Express** como backend (`server/`), con un
+**frontend** en HTML/CSS/JS sin build tools, y funciona como **PWA offline-first**
+pensada para internet lento o inestable y cortes de luz.
 
-Incluye además un **segundo backend en Node.js + Express** (`server/`) con el
-mismo contrato JSON, pensado para desplegarse como funciones serverless en
-Vercel. Ver [`docs/BACKEND_NODE.md`](docs/BACKEND_NODE.md).
+El backend PHP anterior **no se despliega**: se conserva completo en `legacy/`
+(`legacy/backend` y `legacy/app-php`) por si algún día se vuelve a ese motor. El
+backend activo se publica como funciones serverless en Vercel. Ver
+[`docs/BACKEND_NODE.md`](docs/BACKEND_NODE.md).
 
 ---
 
@@ -18,31 +19,18 @@ Vercel. Ver [`docs/BACKEND_NODE.md`](docs/BACKEND_NODE.md).
 
 ```
 TERMOPARTALMACEN/
-├─ backend/
-│  ├─ .env                 # credenciales reales (NO se versiona)
-│  ├─ .env.example         # plantilla de configuración
-│  ├─ config/config.php    # configuración central (env > .env > defaults)
+├─ server/                 # backend activo: Node.js + Express
 │  ├─ src/
-│  │  ├─ bootstrap.php     # arranque único de todos los endpoints
-│  │  ├─ Config.php        # configuración tipada + manejo de errores
-│  │  ├─ Database.php      # PDO singleton y utilidades SQL
-│  │  ├─ Http.php          # respuestas JSON, cuerpo, CORS
-│  │  ├─ Auth.php          # sesión, login, roles, cambio de clave
-│  │  ├─ Audit.php         # historial de auditoría
-│  │  └─ Idempotency.php   # reintentos seguros de escrituras
-│  ├─ public/              # únicos archivos PHP accesibles por HTTP
-│  │  ├─ api.php           # productos, ajustes, tomas físicas
-│  │  ├─ api_activos.php   # activos CALLE / TALLER y materiales
-│  │  ├─ api_herramientas.php
-│  │  ├─ api_entradas.php
-│  │  ├─ api_danados.php
-│  │  ├─ api_historial.php
-│  │  ├─ api_sesion.php
-│  │  ├─ exportar_pdf.php
-│  │  ├─ exportar_excel.php
-│  │  └─ health.php        # monitoreo (sin sesión, sin datos de negocio)
-│  ├─ database/            # DDL de idempotencia y RLS
-│  └─ scripts/             # migrate.php, verificar.php (CLI)
+│  │  ├─ app.js            # CORS, cuerpo crudo, montaje de rutas, estáticos
+│  │  ├─ server.js         # arranque local
+│  │  ├─ config.js         # env > server/.env > legacy/backend/.env
+│  │  ├─ db.js             # pool pg, zona horaria y transacciones
+│  │  ├─ auth.js           # login bcrypt + cookie HMAC
+│  │  ├─ idempotency.js    # reclamo atómico + replay de respuestas
+│  │  └─ routes/           # productos, activos, herramientas, …
+│  ├─ test/                # unit, http, parity e integration
+│  └─ .env.example
+├─ api/                    # funciones serverless de Vercel (importan server/)
 ├─ frontend/
 │  ├─ index.html           # inventario
 │  ├─ login.html
@@ -57,7 +45,7 @@ TERMOPARTALMACEN/
 │  ├─ sw.js                # service worker (app shell)
 │  ├─ css/
 │  ├─ js/
-│  │  ├─ config.js         # URL de la API y parámetros offline
+│  │  ├─ config.js         # mismo origen por defecto + parámetros offline
 │  │  ├─ offline-db.js     # IndexedDB: caché + cola
 │  │  ├─ api-client.js     # apiFetch, sincronización FIFO, idempotencia
 │  │  ├─ app-shell.js      # barra de estado + registro del service worker
@@ -65,16 +53,14 @@ TERMOPARTALMACEN/
 │  │  └─ movil.js
 │  ├─ assets/
 │  └─ icons/
+├─ legacy/                 # PHP archivado (NO se despliega)
+│  ├─ backend/             # backend PHP refactorizado + scripts de migración
+│  └─ app-php/             # app plana original (HTML + PHP + JS)
 ├─ database/               # esquemas y respaldos SQL históricos
-├─ server/                 # backend Node.js + Express (mismas rutas JSON)
-│  ├─ src/                 # app, db, auth, idempotencia, rutas y helpers
-│  ├─ test/                # unit, http, parity e integration
-│  └─ .env.example
-├─ api/                    # funciones serverless de Vercel (importan server/)
 ├─ docs/
 ├─ tools/generar_iconos.ps1
 ├─ index.html              # redirección local a frontend/
-├─ vercel.json             # despliegue estático del frontend
+├─ vercel.json             # frontend estático + funciones api/
 └─ README.md
 ```
 
@@ -82,36 +68,32 @@ TERMOPARTALMACEN/
 
 ## 2. Requisitos
 
-- PHP **8.1+** con `pdo_pgsql` (o `pdo_mysql`) y Apache.
-- PostgreSQL 15+ / Supabase, o MariaDB 10.4+ como respaldo.
+- **Node.js 22+** (probado con 24) y **pnpm**. No se usa `npm`.
+- PostgreSQL 15+ / Supabase (el backend Node solo soporta `pgsql`).
 - Navegador moderno con IndexedDB y Service Worker (Chrome, Edge, Firefox, Safari).
 - HTTPS o `localhost` para el service worker.
-- Opcional (backend Node): **Node 22+** y **pnpm**.
+- Opcional: PHP 8.1+ y Apache solo para revivir `legacy/`.
 
-El frontend es JS nativo sin build y **no usa npm**. El backend Node usa
-**pnpm** (nunca `npm`).
+El frontend es JS nativo sin build. Las dependencias del backend se instalan en
+la raíz del proyecto para que Vercel las resuelva desde `api/`.
 
 ---
 
-## 3. Puesta en marcha local (XAMPP)
+## 3. Puesta en marcha local
 
-1. Copia el proyecto en `C:\xampp\htdocs\xampp\TERMOPARTALMACEN`.
-2. Crea `backend/.env` a partir de `backend/.env.example` y coloca las
-   credenciales reales.
-3. Verifica la conexión y el estado de la base:
+```powershell
+# 1. Dependencias (raíz)
+pnpm install
 
-   ```powershell
-   C:\xampp\php\php.exe backend\scripts\verificar.php
-   ```
+# 2. Credenciales: server/.env o, en su defecto, legacy/backend/.env
+Copy-Item server\.env.example server\.env
 
-4. Aplica las migraciones pendientes (idempotencia y, en Supabase, RLS):
+# 3. App completa (frontend + API) en http://localhost:3000
+pnpm start
+```
 
-   ```powershell
-   C:\xampp\php\php.exe backend\scripts\migrate.php todo
-   ```
-
-5. Abre <http://localhost/xampp/TERMOPARTALMACEN/>.
-   El `index.html` raíz redirige a `frontend/`.
+`pnpm start` sirve `frontend/` y la API en el **mismo origen**, así que no hay
+CORS ni cookies entre sitios. `pnpm dev` hace lo mismo con recarga automática.
 
 Usuarios iniciales de prueba (cámbialos al primer ingreso):
 
@@ -120,8 +102,17 @@ Usuarios iniciales de prueba (cámbialos al primer ingreso):
 | `admin` | `admin123` |
 | `almacen` | `almacen123` |
 
-> Para volver a MariaDB: `DB_DRIVER=mysql` en `.env` y aplica
-> `backend/database/idempotencia_mariadb.sql`.
+Comprobaciones:
+
+```powershell
+curl http://localhost:3000/health.php
+curl "http://localhost:3000/api_sesion.php?accion=estado"
+```
+
+> **Modo PHP (legacy):** si necesitas el backend anterior, usa
+> `legacy/backend` con su propio `.env` y los scripts
+> `php legacy\backend\scripts\verificar.php` / `migrate.php todo`. El frontend
+> puede apuntar allí con `window.WMS_API_BASE`.
 
 ---
 
@@ -150,7 +141,9 @@ sincronizando o errores.
 
 ## 5. Endpoints
 
-Todos los endpoints viven en `backend/public/` y requieren sesión salvo
+Todos los endpoints se implementan en `server/src/routes/` y conservan las rutas
+del backend PHP (`/api.php`, `/api_activos.php`, …) más alias limpios
+(`/api/productos`, `/api/activos`, …). Requieren sesión salvo
 `api_sesion.php?accion=estado|login` y `health.php`.
 
 | Endpoint | Acciones |
@@ -179,26 +172,28 @@ Convenciones:
 - **RLS deny-by-default** en Supabase: RLS activo en todas las tablas, sin
   políticas para `anon`/`authenticated` y permisos revocados. El backend conecta
   con el rol propietario, que no queda afectado por RLS.
-  Ver `backend/database/rls_supabase.sql`.
-- **Credenciales fuera del repositorio** (`backend/.env`, excluido por Git).
-- **Archivos sensibles bloqueados** por `.htaccess` (`config/`, `src/`,
-  `database/`, `scripts/`, `.env`, `.sql`, `.md`).
-- **Idempotencia** con huella SHA-256 para detectar reutilización de claves.
-- Contraseñas con `password_hash`/`password_verify`.
+  Ver `legacy/backend/database/rls_supabase.sql`.
+- **Credenciales fuera del repositorio** (`server/.env` y
+  `legacy/backend/.env`, excluidos por Git).
+- **Cookie de sesión firmada** con HMAC-SHA256 (`HttpOnly`; `Secure` y
+  `SameSite=None` automáticos si el origen es cruzado).
+- **Idempotencia atómica** con huella SHA-256 para detectar reutilización de
+  claves.
+- Contraseñas con `bcryptjs` (compatible con los hashes de PHP).
 - Consultas preparadas en todas las operaciones.
+- `.vercelignore` evita publicar `legacy/`, `docs/`, `database/` y las pruebas.
 
 ---
 
 ## 7. Despliegue
 
-- **Frontend en Vercel:** `vercel.json` sirve `frontend/`. Ver
+- **Frontend + backend en Vercel:** `vercel.json` publica `frontend/` y las
+  funciones de `api/` ejecutan el backend Node. Los `rewrites` mantienen las
+  rutas PHP. Ver [`docs/BACKEND_NODE.md`](docs/BACKEND_NODE.md) y
   [`docs/DESPLIEGUE_VERCEL.md`](docs/DESPLIEGUE_VERCEL.md).
-- **Backend en Vercel (recomendado):** las funciones de `api/` ejecutan el
-  backend Node en el mismo dominio; los `rewrites` mantienen las rutas PHP.
-  Ver [`docs/BACKEND_NODE.md`](docs/BACKEND_NODE.md).
-- **Backend PHP:** Vercel no ejecuta PHP. Debe alojarse en un hosting PHP
-  (cPanel, Railway, Render, VPS) con HTTPS. El frontend apunta a esa URL desde
-  `frontend/js/config.js`.
+- **Backend PHP (legacy):** Vercel no ejecuta PHP. Si algún día se retoma, hay
+  que alojar `legacy/backend` en un hosting PHP (cPanel, Railway, Render, VPS)
+  con HTTPS y apuntar el frontend con `window.WMS_API_BASE`.
 
 ---
 
@@ -215,23 +210,34 @@ Convenciones:
 | Movimientos de herramientas | 2 |
 | Entradas de almacén | 1 |
 | Materiales dañados | 2 |
-| Historial | 60 |
+| Historial | 67 |
 | Exportar PDF | 200, `text/html` |
 | Exportar Excel | 200, `application/vnd.openxmlformats...` |
+| Pruebas unitarias + HTTP (Node) | 56/56 |
+| Paridad Node vs PHP | 13 lecturas + 6 validaciones idénticas |
+| Integración de escrituras (Supabase) | ciclo completo con limpieza |
+| Anti-N+1 | 2 y 15 materiales → las mismas 3 consultas |
 | Idempotencia (misma clave 2 veces) | 1 sola fila creada, segunda respuesta reproducida |
 | Reutilización de clave con otro cuerpo | 409 |
-| Archivos sensibles (`.env`, `config`, SQL) | 403 |
+| Doble clic en el cliente | 1 sola petición y 1 sola clave |
 
 ---
 
 ## 9. Scripts útiles
 
 ```powershell
-# Estado de conexión, conteos y RLS
-C:\xampp\php\php.exe backend\scripts\verificar.php
+# Pruebas rápidas (sin base de datos)
+pnpm test
 
-# Aplicar idempotencia + RLS (Supabase)
-C:\xampp\php\php.exe backend\scripts\migrate.php todo
+# Paridad + escrituras reales (se limpian solas)
+$env:RUN_INTEGRATION = '1'
+pnpm test:all
+
+# Estado de conexión, conteos y RLS (backend PHP archivado)
+C:\xampp\php\php.exe legacy\backend\scripts\verificar.php
+
+# Aplicar idempotencia + RLS en Supabase (scripts del backend archivado)
+C:\xampp\php\php.exe legacy\backend\scripts\migrate.php todo
 
 # Regenerar iconos PWA
 powershell -ExecutionPolicy Bypass -File tools\generar_iconos.ps1
@@ -239,19 +245,15 @@ powershell -ExecutionPolicy Bypass -File tools\generar_iconos.ps1
 
 ---
 
-## 10. Backend Node.js (opcional)
-
-```powershell
-pnpm install          # dependencias en la raíz
-pnpm start            # http://localhost:3000
-pnpm test             # 51 pruebas rápidas, sin base de datos
-```
+## 10. Backend Node.js
 
 - Mismas rutas y respuestas que PHP (`/api.php`, `/api_activos.php`, …) y alias
   limpios (`/api/productos`, `/api/activos`, …).
-- Idempotencia atómica en todos los POST (replay de la respuesta original).
+- Idempotencia atómica en todos los POST (replay de la respuesta original) y
+  guardia anti doble clic en `frontend/js/api-client.js`.
 - Lote anti-N+1 al crear/actualizar activos con muchos materiales.
-- Pruebas de paridad y de escritura real: `$env:RUN_INTEGRATION = '1'; pnpm test:all`.
+- Sesión stateless con cookie HMAC, apta para serverless.
+- En local sirve el frontend y la API en el mismo origen.
 
 Detalles, variables de entorno y despliegue:
 [`docs/BACKEND_NODE.md`](docs/BACKEND_NODE.md).
