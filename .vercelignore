@@ -1,0 +1,16 @@
+# Solo se despliega lo necesario:
+#   - frontend/  → salida estática
+#   - api/       → funciones serverless
+#   - server/src → código importado por las funciones
+#   - package.json / pnpm-lock.yaml → dependencias
+
+legacy/
+docs/
+tools/
+database/
+server/test/
+server/.env.example
+*.md
+.gitignore
+.gitattributes
+.htaccess
