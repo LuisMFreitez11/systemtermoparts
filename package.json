@@ -12,7 +12,9 @@
         "dev": "node --watch server/src/server.js",
         "test": "node --test --test-concurrency=1 \"server/test/unit/*.test.js\" \"server/test/http/*.test.js\"",
         "test:all": "node --test --test-concurrency=1 \"server/test/**/*.test.js\"",
-        "test:parity": "node --test --test-concurrency=1 \"server/test/parity/*.test.js\""
+        "test:parity": "node --test --test-concurrency=1 \"server/test/parity/*.test.js\"",
+        "db:estado": "node tools/estado-supabase.mjs",
+        "db:importar": "node tools/importar_dump_mariadb.mjs"
     },
     "dependencies": {
         "bcryptjs": "^3.0.2",
