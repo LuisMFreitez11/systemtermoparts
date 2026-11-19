@@ -1,0 +1,17 @@
+{
+    "name": "termopart-wms-server",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "description": "Backend Node.js + Express del WMS Termo Parts FW (las dependencias se instalan en la raíz)",
+    "engines": {
+        "node": ">=22"
+    },
+    "scripts": {
+        "start": "node src/server.js",
+        "dev": "node --watch src/server.js",
+        "test": "node --test --test-concurrency=1 \"test/unit/*.test.js\" \"test/http/*.test.js\"",
+        "test:all": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
+        "test:parity": "node --test --test-concurrency=1 \"test/parity/*.test.js\""
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "name": "termopart-wms",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "description": "WMS Termo Parts FW: frontend estático + backend Node.js/Express",
+    "engines": {
+        "node": ">=22"
+    },
+    "scripts": {
+        "start": "node server/src/server.js",
+        "dev": "node --watch server/src/server.js",
+        "test": "node --test --test-concurrency=1 \"server/test/unit/*.test.js\" \"server/test/http/*.test.js\"",
+        "test:all": "node --test --test-concurrency=1 \"server/test/**/*.test.js\"",
+        "test:parity": "node --test --test-concurrency=1 \"server/test/parity/*.test.js\""
+    },
+    "dependencies": {
+        "bcryptjs": "^3.0.2",
+        "exceljs": "^4.4.0",
+        "express": "^5.1.0",
+        "pg": "^8.16.3"
+    },
+    "devDependencies": {
+        "supertest": "^7.1.4"
+    }
+}

@@ -1,19 +1,71 @@
-# Despliegue en Vercel + backend PHP
+# Despliegue en Vercel
 
 ## Resumen
 
 | Componente | Dónde se despliega | Notas |
 |---|---|---|
 | Frontend (HTML/CSS/JS/PWA) | **Vercel** | Estático. `vercel.json` sirve `frontend/`. |
-| Backend (PHP + sesiones) | Hosting PHP con HTTPS | Vercel **no** ejecuta PHP. |
+| Backend Node + Express | **Vercel** (funciones de `api/`) | Mismas rutas y JSON. Recomendado. |
+| Backend PHP + sesiones | Hosting PHP con HTTPS | Alternativa con MariaDB. |
 
-El frontend queda visible en Vercel de inmediato. Para que el login y los
-endpoints funcionen, la API PHP debe estar publicada en un hosting con PHP y la
-URL debe configurarse en `frontend/js/config.js`.
+Hay dos caminos válidos:
+
+- **A. Todo en Vercel (recomendado):** frontend estático + backend Node
+  serverless. No hace falta otro hosting y el frontend queda en el mismo
+  dominio (`apiBase = ''`).
+- **B. Frontend en Vercel + backend PHP:** obligatorio si la base es MariaDB.
+  Ver el Paso 2.
 
 ---
 
-## Paso 1 — Publicar el frontend en Vercel
+## Opción A — Backend Node en Vercel
+
+`vercel.json` ya incluye los `rewrites` (`/api.php` → `/api/productos`, …) y las
+funciones de `api/` importan `server/src/app.js`. No hay build: el
+`outputDirectory` es `frontend`.
+
+### Paso 1 — Importar el repositorio
+
+1. En Vercel: **Add New → Project → Import** del repositorio.
+2. Framework Preset: **Other**.
+3. Build Command: *(vacío)*.
+4. Output Directory: `frontend`.
+5. Antes de desplegar, define las variables del Paso 2.
+
+### Paso 2 — Variables de entorno
+
+| Variable | Valor |
+|---|---|
+| `DB_DRIVER` | `pgsql` |
+| `DB_PGSQL_DSN` | `pgsql:host=...pooler.supabase.com;port=5432;dbname=postgres;sslmode=require` |
+| `DB_PGSQL_USER` | `postgres.TU-PROYECTO` |
+| `DB_PGSQL_PASSWORD` | tu clave |
+| `SESSION_SECRET` | cadena larga y aleatoria (**obligatoria**) |
+| `SESSION_SAMESITE` | `Lax` (mismo dominio) o `None` (dominios distintos) |
+| `SESSION_SECURE` | `0` con `Lax`; `1` con `None` (HTTPS) |
+| `CORS_ALLOWED_ORIGINS` | `https://tu-proyecto.vercel.app` |
+| `FRONTEND_URL` | `https://tu-proyecto.vercel.app` |
+| `IDEMPOTENCY_WAIT` | `5` |
+| `DB_POOL_MAX` | `3` |
+
+Sin `SESSION_SECRET`, cada instancia firma las cookies con una clave distinta y
+las sesiones se pierden de forma intermitente.
+
+### Paso 3 — Verificar
+
+1. `https://TU-APP/health.php` → `{"exito":true,...}`.
+2. Login real desde `https://TU-APP/login.html`.
+3. Inventario con los 854 productos.
+4. `/exportar_excel.php` descarga un `.xlsx` y `/exportar_pdf.php` abre el HTML.
+5. Dos clics seguidos en un botón → **una sola** fila en el historial.
+
+Detalles técnicos y pruebas: [`BACKEND_NODE.md`](BACKEND_NODE.md).
+
+---
+
+## Opción B — Backend PHP
+
+### Paso 1 — Publicar el frontend en Vercel
 
 ### Opción A: desde la web
 
@@ -150,8 +202,12 @@ rama conectada).
 
 ## Nota importante sobre Vercel
 
-Vercel aloja el **frontend estático** y la PWA. No ejecuta PHP ni mantiene
-sesiones PHP. Para un despliegue totalmente funcional se necesita el hosting PHP
-del Paso 2. Si el backend se publica en un subdominio (por ejemplo
-`api.termopart.com`), conviene mantener ese dominio estable para no reconfigurar
-el frontend.
+Con la **Opción A**, Vercel aloja el frontend y el backend Node en el mismo
+proyecto: las funciones de `api/` mantienen las rutas PHP mediante `rewrites`,
+así que `config.js` deja `apiBase = ''` y no hay CORS entre sitios.
+
+Con la **Opción B**, Vercel solo aloja el frontend estático y la PWA: no ejecuta
+PHP ni mantiene sesiones PHP. Para un despliegue totalmente funcional se
+necesita el hosting PHP del Paso 2. Si el backend se publica en un subdominio
+(por ejemplo `api.termopart.com`), conviene mantener ese dominio estable para no
+reconfigurar el frontend.

@@ -8,6 +8,10 @@ El proyecto está separado en **backend** (PHP + PostgreSQL/Supabase, con respal
 MariaDB) y **frontend** (HTML/CSS/JS sin build tools), y funciona como **PWA
 offline-first** pensada para internet lento o inestable y cortes de luz.
 
+Incluye además un **segundo backend en Node.js + Express** (`server/`) con el
+mismo contrato JSON, pensado para desplegarse como funciones serverless en
+Vercel. Ver [`docs/BACKEND_NODE.md`](docs/BACKEND_NODE.md).
+
 ---
 
 ## 1. Estructura
@@ -62,6 +66,11 @@ TERMOPARTALMACEN/
 │  ├─ assets/
 │  └─ icons/
 ├─ database/               # esquemas y respaldos SQL históricos
+├─ server/                 # backend Node.js + Express (mismas rutas JSON)
+│  ├─ src/                 # app, db, auth, idempotencia, rutas y helpers
+│  ├─ test/                # unit, http, parity e integration
+│  └─ .env.example
+├─ api/                    # funciones serverless de Vercel (importan server/)
 ├─ docs/
 ├─ tools/generar_iconos.ps1
 ├─ index.html              # redirección local a frontend/
@@ -77,10 +86,10 @@ TERMOPARTALMACEN/
 - PostgreSQL 15+ / Supabase, o MariaDB 10.4+ como respaldo.
 - Navegador moderno con IndexedDB y Service Worker (Chrome, Edge, Firefox, Safari).
 - HTTPS o `localhost` para el service worker.
+- Opcional (backend Node): **Node 22+** y **pnpm**.
 
-Este repositorio **no usa npm ni pnpm**: el frontend es JS nativo sin build.
-Si en el futuro se agrega tooling, el gestor de paquetes del proyecto será
-**pnpm**.
+El frontend es JS nativo sin build y **no usa npm**. El backend Node usa
+**pnpm** (nunca `npm`).
 
 ---
 
@@ -184,6 +193,9 @@ Convenciones:
 
 - **Frontend en Vercel:** `vercel.json` sirve `frontend/`. Ver
   [`docs/DESPLIEGUE_VERCEL.md`](docs/DESPLIEGUE_VERCEL.md).
+- **Backend en Vercel (recomendado):** las funciones de `api/` ejecutan el
+  backend Node en el mismo dominio; los `rewrites` mantienen las rutas PHP.
+  Ver [`docs/BACKEND_NODE.md`](docs/BACKEND_NODE.md).
 - **Backend PHP:** Vercel no ejecuta PHP. Debe alojarse en un hosting PHP
   (cPanel, Railway, Render, VPS) con HTTPS. El frontend apunta a esa URL desde
   `frontend/js/config.js`.
@@ -224,3 +236,22 @@ C:\xampp\php\php.exe backend\scripts\migrate.php todo
 # Regenerar iconos PWA
 powershell -ExecutionPolicy Bypass -File tools\generar_iconos.ps1
 ```
+
+---
+
+## 10. Backend Node.js (opcional)
+
+```powershell
+pnpm install          # dependencias en la raíz
+pnpm start            # http://localhost:3000
+pnpm test             # 51 pruebas rápidas, sin base de datos
+```
+
+- Mismas rutas y respuestas que PHP (`/api.php`, `/api_activos.php`, …) y alias
+  limpios (`/api/productos`, `/api/activos`, …).
+- Idempotencia atómica en todos los POST (replay de la respuesta original).
+- Lote anti-N+1 al crear/actualizar activos con muchos materiales.
+- Pruebas de paridad y de escritura real: `$env:RUN_INTEGRATION = '1'; pnpm test:all`.
+
+Detalles, variables de entorno y despliegue:
+[`docs/BACKEND_NODE.md`](docs/BACKEND_NODE.md).

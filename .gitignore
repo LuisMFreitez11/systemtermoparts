@@ -6,6 +6,9 @@ vendor/
 
 # Configuración sensible (credenciales reales)
 backend/.env
+server/.env
+.env
+.env.local
 
 # Sistema operativo / editores
 .DS_Store

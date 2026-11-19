@@ -1,6 +1,23 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "outputDirectory": "frontend",
+    "rewrites": [
+        { "source": "/api.php", "destination": "/api/productos" },
+        { "source": "/api_activos.php", "destination": "/api/activos" },
+        { "source": "/api_herramientas.php", "destination": "/api/herramientas" },
+        { "source": "/api_entradas.php", "destination": "/api/entradas" },
+        { "source": "/api_danados.php", "destination": "/api/danados" },
+        { "source": "/api_historial.php", "destination": "/api/historial" },
+        { "source": "/api_sesion.php", "destination": "/api/sesion" },
+        { "source": "/exportar_pdf.php", "destination": "/api/exportar_pdf" },
+        { "source": "/exportar_excel.php", "destination": "/api/exportar_excel" },
+        { "source": "/health.php", "destination": "/api/health" }
+    ],
+    "functions": {
+        "api/*.js": {
+            "maxDuration": 30
+        }
+    },
     "headers": [
         {
             "source": "/sw.js",

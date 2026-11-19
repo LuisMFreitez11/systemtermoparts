@@ -131,7 +131,7 @@
         });
     }
 
-    function apiFetch(ruta, opciones) {
+    function ejecutarApiFetch(ruta, opciones) {
         opciones = Object.assign({}, opciones || {});
 
         var metodo = String(opciones.method || 'GET').toUpperCase();
@@ -235,6 +235,49 @@
                 offline: true
             }, { offline: true });
         });
+    }
+
+    /**
+     * Guardia anti doble clic.
+     *
+     * Si dos envíos idénticos (mismo método, misma ruta y mismo cuerpo) se
+     * disparan mientras el primero sigue en curso —doble clic, doble submit,
+     * tecla Enter repetida—, el segundo comparte la MISMA promesa y, por
+     * tanto, la MISMA `X-Idempotency-Key`. El backend recibe una sola
+     * petición y el botón nunca ejecuta la operación dos veces.
+     *
+     * Las peticiones con clave explícita (cola offline) no pasan por aquí:
+     * su clave ya es estable y la deduplicación la hace el servidor.
+     */
+    var enVuelo = Object.create(null);
+
+    function apiFetch(ruta, opciones) {
+        opciones = Object.assign({}, opciones || {});
+
+        var metodo = String(opciones.method || 'GET').toUpperCase();
+
+        if (metodo === 'GET' || opciones.idempotencyKey) {
+            return ejecutarApiFetch(ruta, opciones);
+        }
+
+        var firma = metodo + ' ' + ruta + ' ' + (opciones.body == null ? '' : String(opciones.body));
+
+        if (enVuelo[firma]) {
+            return enVuelo[firma];
+        }
+
+        var promesa = ejecutarApiFetch(ruta, opciones);
+        enVuelo[firma] = promesa;
+
+        function liberar() {
+            if (enVuelo[firma] === promesa) {
+                delete enVuelo[firma];
+            }
+        }
+
+        promesa.then(liberar, liberar);
+
+        return promesa;
     }
 
     function sinCopia() {
