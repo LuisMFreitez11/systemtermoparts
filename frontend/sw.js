@@ -1,7 +1,7 @@
 /* eslint-env serviceworker */
 'use strict';
 
-var VERSION = 'wms-2.0.0';
+var VERSION = 'wms-2.0.1';
 var CACHE = 'termopart-' + VERSION;
 
 var RECURSOS = [
@@ -160,8 +160,17 @@ self.addEventListener('fetch', function (evento) {
         return;
     }
 
-    // La API se maneja en api-client.js (IndexedDB + cola). No se cachea aquí.
-    if (destino.pathname.indexOf('/backend/public/') !== -1 || destino.pathname.indexOf('/api/') !== -1) {
+    // La API se maneja en api-client.js (IndexedDB + cola). No se cachea aquí,
+    // ni por la ruta PHP (/api.php, /api_activos.php, …) ni por los alias
+    // limpios (/api/productos, …) que usan los rewrites de Vercel.
+    var esApi = destino.pathname.indexOf('/backend/public/') !== -1
+        || destino.pathname.indexOf('/api/') === 0
+        || destino.pathname === '/api.php'
+        || /^\/api_[a-z_]+\.php$/.test(destino.pathname)
+        || /^\/exportar_(pdf|excel)\.php$/.test(destino.pathname)
+        || destino.pathname === '/health.php';
+
+    if (esApi) {
         return;
     }
 
