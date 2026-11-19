@@ -153,7 +153,7 @@ exige que 2 y 15 materiales usen **el mismo número** (≤ 3).
 ## 6. Pruebas
 
 ```powershell
-# 56 pruebas rápidas: helpers, validadores, rutas, errores, CORS,
+# 60 pruebas rápidas: helpers, validadores, rutas, errores, CORS,
 # cookies, JSON inválido, 401/400/405/404/409, idempotencia concurrente
 # y la guardia anti doble clic del cliente.
 pnpm test

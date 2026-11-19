@@ -12,6 +12,7 @@
 import express from 'express';
 import path from 'node:path';
 import { config, RAIZ_PROYECTO } from './config.js';
+import { guardiaConfiguracion } from './config-guard.js';
 import { cors, json as jsonResponse, HttpError } from './http.js';
 import { leerUsuario } from './auth.js';
 
@@ -32,6 +33,10 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
 app.use(cors);
+
+// Antes que nada: si en producción faltan variables obligatorias, se responde
+// 503 con la lista exacta en vez de dejar caer la función con un 500 opaco.
+app.use(guardiaConfiguracion(config.faltantes));
 
 // El cuerpo crudo hace falta para la huella de idempotencia: PHP usaba
 // php://input, y la huella debe coincidir byte a byte entre ambos backends.

@@ -56,6 +56,10 @@ redespliega**: no hace falta subir nada a mano.
 Sin `SESSION_SECRET`, el backend falla al arrancar en producción. En local se
 deriva uno de desarrollo, por eso el error no aparece hasta desplegar.
 
+Si falta alguna de estas variables, la API **no cae con un 500 opaco**: responde
+`503` con `{"exito":false,"faltantes":["SESSION_SECRET", ...]}`, así se ve en
+`/health.php` y en los logs qué falta exactamente.
+
 En Vercel usa preferentemente el pooler de Supabase en el puerto **6543**
 (transacción) en `DB_PGSQL_DSN`; el puerto `5432` es modo sesión y consume una
 conexión por instancia.
@@ -195,6 +199,7 @@ rama conectada).
 | Síntoma | Causa probable | Solución |
 |---|---|---|
 | Login responde 200 pero no “entra” | `SESSION_SECRET` ausente o cookie bloqueada | Definir `SESSION_SECRET`; con dominios distintos `SESSION_SAMESITE=None` y `SESSION_SECURE=1` |
+| `health.php` 503 con `faltantes` | Faltan variables de entorno en Vercel | Crear las que lista el JSON y redesplegar |
 | `CORS` bloqueado | Origen no autorizado | Agregar el dominio de Vercel a `CORS_ALLOWED_ORIGINS` |
 | Service worker no registra | Se accedió por HTTP o IP LAN | Usar HTTPS o `localhost` |
 | `health.php` 500 | Credenciales o conexión a Supabase | Revisar `DB_PGSQL_*` y `SESSION_SECRET` en Vercel; ver log de la función |

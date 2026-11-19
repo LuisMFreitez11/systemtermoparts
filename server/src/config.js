@@ -152,24 +152,33 @@ if (config.driver !== 'pgsql') {
 
 const esProduccion = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 
+/**
+ * Variables obligatorias que faltan en producción. No se lanza un error al
+ * importar el módulo: en Vercel eso se traduce en un 500 opaco
+ * (`FUNCTION_INVOCATION_FAILED`) sin pistas. En su lugar, `app.js` responde 503
+ * con la lista de nombres que hay que configurar.
+ */
+const faltantes = [];
+
 if (config.sesion.secreto === '') {
     if (esProduccion) {
-        throw new Error(
-            'SESSION_SECRET es obligatorio en producción. ' +
-            'Defínelo en las variables de entorno (Vercel → Settings → Environment Variables).'
-        );
+        faltantes.push('SESSION_SECRET');
+    } else {
+        // Se deriva un secreto estable por proceso solo para desarrollo.
+        config.sesion.secreto = `dev-${config.db.user}-${config.db.database}-${config.db.password}`;
+        config.sesion.secretoDerivado = true;
     }
-
-    // Se deriva un secreto estable por proceso solo para desarrollo.
-    config.sesion.secreto = `dev-${config.db.user}-${config.db.database}-${config.db.password}`;
-    config.sesion.secretoDerivado = true;
 }
 
 if (esProduccion && config.db.password === '') {
-    throw new Error(
-        'DB_PGSQL_PASSWORD es obligatorio en producción. ' +
-        'Revisa las variables de entorno del proyecto.'
-    );
+    faltantes.push('DB_PGSQL_PASSWORD');
 }
+
+if (esProduccion && env('DB_PGSQL_USER') === '') {
+    faltantes.push('DB_PGSQL_USER');
+}
+
+config.esProduccion = esProduccion;
+config.faltantes = faltantes;
 
 export { config, RAIZ_PROYECTO };

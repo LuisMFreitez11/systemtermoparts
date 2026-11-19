@@ -213,7 +213,7 @@ Convenciones:
 | Historial | 67 |
 | Exportar PDF | 200, `text/html` |
 | Exportar Excel | 200, `application/vnd.openxmlformats...` |
-| Pruebas unitarias + HTTP (Node) | 56/56 |
+| Pruebas unitarias + HTTP (Node) | 60/60 |
 | Paridad Node vs PHP | 13 lecturas + 6 validaciones idénticas |
 | Integración de escrituras (Supabase) | ciclo completo con limpieza |
 | Anti-N+1 | 2 y 15 materiales → las mismas 3 consultas |
