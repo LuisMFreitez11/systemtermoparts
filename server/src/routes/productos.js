@@ -6,7 +6,7 @@ import express from 'express';
 import { db, query, withTransaction, esConflicto } from '../db.js';
 import {
     json, error, lanzar, parametro, cuerpo, numero, entero, texto,
-    mbsub, redondear,
+    redondear,
 } from '../http.js';
 import { requireSession } from '../auth.js';
 import { idempotencia } from '../idempotency.js';

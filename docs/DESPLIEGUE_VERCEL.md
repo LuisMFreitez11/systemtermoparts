@@ -51,6 +51,10 @@ funciones de `api/` importan `server/src/app.js`. No hay build: el
 Sin `SESSION_SECRET`, cada instancia firma las cookies con una clave distinta y
 las sesiones se pierden de forma intermitente.
 
+En Vercel usa preferentemente el pooler de Supabase en el puerto **6543**
+(transacción) en `DB_PGSQL_DSN`; el puerto `5432` es modo sesión y consume una
+conexión por instancia.
+
 ### Paso 3 — Verificar
 
 1. `https://TU-APP/health.php` → `{"exito":true,...}`.

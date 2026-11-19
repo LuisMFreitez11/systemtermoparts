@@ -88,8 +88,7 @@ que usan los `rewrites` de Vercel.
 | `DB_DRIVER` | `pgsql` | Solo `pgsql`; con otro valor el proceso no arranca |
 | `DB_PGSQL_DSN` | — | `pgsql:host=...;port=5432;dbname=postgres;sslmode=require` |
 | `DB_PGSQL_USER` / `DB_PGSQL_PASSWORD` | — | Usuario del pooler de Supabase |
-| `DB_POOL_MAX` | `3` | Conexiones por instancia; en serverless no subir |
-| `SESSION_SECRET` | derivado en desarrollo | **Obligatorio en producción** |
+| `DB_POOL_MAX` | `3` | Conexiones por instancia; en serverless no subir || `SESSION_SECRET` | derivado en desarrollo | **Obligatorio en producción** |
 | `SESSION_NAME` | `TERMOPART_SESS` | Igual que PHP |
 | `SESSION_LIFETIME` | `43200` | Segundos (12 h) |
 | `SESSION_SAMESITE` / `SESSION_SECURE` | `Lax` / `0` | `None` + `1` si el frontend está en otro dominio |
@@ -189,6 +188,11 @@ del historial por encima del `MAX(historial_id)` tomado **antes** del login.
    - `FRONTEND_URL=https://tu-proyecto.vercel.app`
    - `IDEMPOTENCY_WAIT=5` (margen dentro del límite de la función)
    - `DB_POOL_MAX=3`
+
+> **Pooler**: en Vercel conviene el pooler de Supabase en el puerto **6543**
+> (modo transacción), pensado para serverless. Con el puerto `5432` (modo
+> sesión) cada instancia retiene conexiones mientras está congelada y se puede
+> agotar el límite del proyecto. Ambos puertos se probaron con este backend.
 4. Deploy. `vercel.json` reescribe `/api.php`, `/api_activos.php`, … a
    `/api/productos`, `/api/activos`, … y da 30 s de `maxDuration` a las
    funciones.
