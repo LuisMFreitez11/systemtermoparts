@@ -10,7 +10,8 @@
  * del backend PHP; el frontend no necesita saber qué motor responde.
  */
 import express from 'express';
-import { config } from './config.js';
+import path from 'node:path';
+import { config, RAIZ_PROYECTO } from './config.js';
 import { cors, json as jsonResponse, HttpError } from './http.js';
 import { leerUsuario } from './auth.js';
 
@@ -62,13 +63,23 @@ for (const [rutas, router] of MONTAJES) {
     }
 }
 
-app.get('/', (_req, res) => {
+app.get(['/api', '/api/'], (_req, res) => {
     jsonResponse(res, 200, {
         exito: true,
         servicio: 'wms-termo-part',
         mensaje: 'API del WMS Termo Parts FW. Usa /health.php para monitoreo.',
     });
 });
+
+// En local, el mismo servidor Node sirve el frontend (`pnpm start`):
+// mismo origen, sin CORS ni cookies entre sitios. En Vercel el frontend lo
+// publica la plataforma y las funciones de `api/` solo atienden `/api/*`.
+if (!process.env.VERCEL) {
+    app.use(express.static(path.join(RAIZ_PROYECTO, 'frontend'), {
+        extensions: ['html'],
+        index: 'index.html',
+    }));
+}
 
 app.use((_req, res) => {
     jsonResponse(res, 404, { exito: false, mensaje: 'Recurso no encontrado.' });
